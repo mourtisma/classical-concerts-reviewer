@@ -5,6 +5,7 @@ mod routes;
 mod model;
 mod repository;
 mod service;
+mod status;
 
 #[launch]
 fn rocket() -> _ {

@@ -14,7 +14,7 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
        repository
     }
 
-    fn get_many(&mut self, options: ListOptions) -> &Vec<M> {
-        &self.data
+    fn get_many(&self, options: ListOptions) -> Vec<M> {
+        self.data.clone()    
     }
 }
