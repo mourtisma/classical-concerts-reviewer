@@ -1,10 +1,10 @@
 use rocket::{serde::Serialize, http::Status};
-use crate::status::status;
+use crate::status::ResponseStatus;
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct ErrorResult {
-    pub status: status,
+    pub status: ResponseStatus,
     pub message: String
 }
 
@@ -35,7 +35,7 @@ impl ApiError for NotFoundError<'_> {
 
     fn to_result(self) -> ErrorResult {
         ErrorResult {
-            status: status::error,
+            status: ResponseStatus::Error,
             message: self.message.to_string(),
         }
     }

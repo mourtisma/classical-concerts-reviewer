@@ -1,4 +1,4 @@
-use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepository, list_options::ListOptions}, status::status};
+use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepository, list_options::ListOptions}, status::ResponseStatus};
 
 use super::{result::{SuccessGetManyResult, SuccessGetOneResult}, error::{NotFoundError, ApiError}};
 
@@ -11,7 +11,7 @@ impl<M> BaseService<M> where M: BaseModel {
         let items = self.repository.get_many(options);
 
         SuccessGetManyResult {
-            status: status::success,
+            status: ResponseStatus::Success,
             items
         }
     }
@@ -19,7 +19,7 @@ impl<M> BaseService<M> where M: BaseModel {
     pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError + Copy> {
         if let Some(item) = self.repository.get_one(id) {
             Ok(SuccessGetOneResult {
-                status: status::success,
+                status: ResponseStatus::Success,
                 item
             })
         } else {
