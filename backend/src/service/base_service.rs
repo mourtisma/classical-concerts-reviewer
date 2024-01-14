@@ -1,6 +1,6 @@
 use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepository, list_options::ListOptions}, status::status};
 
-use super::result::SuccessGetManyResult;
+use super::{result::{SuccessGetManyResult, SuccessGetOneResult}, error::{NotFoundError, ApiError}};
 
 pub struct BaseService<M> where M: BaseModel {
     pub repository: Box<dyn BaseRepository<M>>,
@@ -12,7 +12,19 @@ impl<M> BaseService<M> where M: BaseModel {
 
         SuccessGetManyResult {
             status: status::success,
-            items: items
+            items
         }
+    }
+
+    pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError + Copy> {
+        if let Some(item) = self.repository.get_one(id) {
+            Ok(SuccessGetOneResult {
+                status: status::success,
+                item
+            })
+        } else {
+            Err(NotFoundError::new())
+        }
+        
     }
 }

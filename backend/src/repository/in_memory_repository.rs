@@ -17,4 +17,11 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
     fn get_many(&self, options: ListOptions) -> Vec<M> {
         self.data.clone()    
     }
+
+    fn get_one(&self, id: &str) -> Option<M> {
+        let data = self.data.clone();
+
+        data.iter().find(|&&x| x.id() == id).cloned()
+ 
+    }
 }
