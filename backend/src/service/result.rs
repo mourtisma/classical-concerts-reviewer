@@ -15,3 +15,10 @@ pub struct SuccessGetOneResult<M> {
     pub item: M
 }
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct SuccessCreateResult<M> {
+    pub status: ResponseStatus,
+    pub item: M
+}
+

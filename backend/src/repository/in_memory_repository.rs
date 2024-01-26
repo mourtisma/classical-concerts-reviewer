@@ -24,4 +24,9 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
         data.iter().find(|&&x| x.id() == id).cloned()
  
     }
+
+    fn create(&mut self, data: M) -> M {
+        self.data.push(data);
+        data
+    }
 }

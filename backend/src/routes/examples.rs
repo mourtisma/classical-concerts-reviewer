@@ -1,5 +1,5 @@
 use rocket::http::Status;
-use rocket::{fairing::AdHoc, routes, get, serde::json::Json};
+use rocket::{fairing::AdHoc, routes, get, post, serde::json::Json};
 use crate::repository::list_options::ListOptions;
 use crate::service::base_service::BaseService;
 use crate::repository::in_memory_repository::InMemoryRepository;
@@ -7,7 +7,7 @@ use crate::repository::base_repository::BaseRepository;
 
 use crate::model::example::Example;
 use crate::service::error::{ErrorResult, ApiError};
-use crate::service::result::{SuccessGetManyResult, SuccessGetOneResult};
+use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult};
 
 
 #[get("/")]
@@ -39,8 +39,21 @@ fn detail(id: &str) -> Result<Json<SuccessGetOneResult<Example<'static>>>, (Stat
 
 }
 
+#[post("/", data="<example>")]
+fn create(example: Json<Example<'_>>) -> Json<SuccessCreateResult<Example<'_>>> {
+    let repository = InMemoryRepository::<Example>::new();
+    let mut service = BaseService::<Example> {
+        repository:  Box::new(repository),
+    };
+    
+    let example = service.create(example.0);
+    
+    Json(example)
+
+}
+
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
-        rocket.mount("/examples", routes![list, detail])
+        rocket.mount("/examples", routes![list, detail, create])
     })
 }
