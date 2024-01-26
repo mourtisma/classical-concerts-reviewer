@@ -21,7 +21,7 @@ pub struct NotFoundError<'a> {
 }
 
 
-impl ApiError for NotFoundError<'_> {
+impl<'a> ApiError for NotFoundError<'a> {
     fn new() -> Self {
         NotFoundError {
             http_status: Status::NotFound,

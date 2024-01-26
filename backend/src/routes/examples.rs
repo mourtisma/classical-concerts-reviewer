@@ -11,7 +11,7 @@ use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessG
 
 
 #[get("/")]
-fn list() -> Json<SuccessGetManyResult<Example<'static>>> {
+fn list<'a>() -> Json<SuccessGetManyResult<Example<'a>>> {
     let repository = InMemoryRepository::<Example>::new();
     let service = BaseService::<Example> {
         repository:  Box::new(repository),
@@ -24,7 +24,7 @@ fn list() -> Json<SuccessGetManyResult<Example<'static>>> {
 }
 
 #[get("/<id>")]
-fn detail(id: &str) -> Result<Json<SuccessGetOneResult<Example<'static>>>, (Status, Json<ErrorResult>)> {
+fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Status, Json<ErrorResult>)> {
     let repository = InMemoryRepository::<Example>::new();
     let service = BaseService::<Example> {
         repository:  Box::new(repository),
@@ -40,7 +40,7 @@ fn detail(id: &str) -> Result<Json<SuccessGetOneResult<Example<'static>>>, (Stat
 }
 
 #[post("/", data="<example>")]
-fn create(example: Json<Example<'_>>) -> Json<SuccessCreateResult<Example<'_>>> {
+fn create<'a>(example: Json<Example<'a>>) -> Json<SuccessCreateResult<Example<'a>>> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
         repository:  Box::new(repository),
