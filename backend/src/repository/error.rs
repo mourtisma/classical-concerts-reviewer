@@ -3,8 +3,8 @@ pub enum RepositoryErrorType {
     Unknown
 }
 
-pub struct RepositoryError<'a> {
+pub struct RepositoryError {
     pub error_type: RepositoryErrorType,
-    pub message: Option<&'a str>
+    pub message: Option<String>
 
 }

@@ -16,14 +16,14 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel {
         }
     }
 
-    pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError + Copy> {
+    pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError> {
         if let Some(item) = self.repository.get_one(id) {
             Ok(SuccessGetOneResult {
                 status: ResponseStatus::Success,
                 item
             })
         } else {
-            Err(NotFoundError::new())
+            Err(NotFoundError::new(None))
         }
         
     }

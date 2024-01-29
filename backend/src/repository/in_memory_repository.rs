@@ -43,7 +43,7 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
         }
     }
 
-    fn delete<'a>(&mut self, id: &'a str) -> Result<(), RepositoryError> {
+    fn delete(&mut self, id: &str) -> Result<(), RepositoryError> {
         let items = &mut self.data;
         let num_items_before = items.len();
 
