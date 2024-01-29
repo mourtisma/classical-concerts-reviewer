@@ -1,6 +1,6 @@
 use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepository, list_options::ListOptions}, status::ResponseStatus};
 
-use super::{result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult}, error::{NotFoundError, ApiError}};
+use super::{result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}, error::{to_api_error, ApiError, NotFoundError}};
 
 pub struct BaseService<'a, M> where M: BaseModel {
     pub repository: Box<dyn BaseRepository<M> + 'a>,
@@ -34,6 +34,18 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel {
         SuccessCreateResult {
             status: ResponseStatus::Success,
             item
+        }
+    }
+
+    pub fn update(&mut self, id: &str, data: M) -> Result<SuccessUpdateResult<M>, Box<dyn ApiError>> {
+        let update_result = self.repository.update(id, data);
+
+        match update_result {
+            Err(rep_err) => Err(to_api_error(rep_err)),
+            Ok(item) => Ok(SuccessUpdateResult {
+                status: ResponseStatus::Success,
+                item
+            })
         }
     }
 }
