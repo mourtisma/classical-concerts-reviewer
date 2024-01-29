@@ -1,5 +1,5 @@
 use rocket::http::Status;
-use rocket::{fairing::AdHoc, routes, get, post, put, serde::json::Json};
+use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
 use crate::repository::list_options::ListOptions;
 use crate::service::base_service::BaseService;
 use crate::repository::in_memory_repository::InMemoryRepository;
@@ -68,8 +68,24 @@ fn update<'a>(id: &str, example: Json<Example<'a>>) -> Result<Json<SuccessUpdate
 
 }
 
+#[delete("/<id>")]
+fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
+    let repository = InMemoryRepository::<Example>::new();
+    let mut service = BaseService::<Example> {
+        repository:  Box::new(repository),
+    };
+    
+    match service.delete(id) {
+        Ok(_) => Ok(Status::NoContent),
+        Err(api_error) => {
+            Err((api_error.http_status(), Json(api_error.to_result())))
+        }
+    }
+
+}
+
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
-        rocket.mount("/examples", routes![list, detail, create, update])
+        rocket.mount("/examples", routes![list, detail, create, update, delete])
     })
 }

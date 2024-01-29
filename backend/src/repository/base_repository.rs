@@ -8,4 +8,5 @@ pub trait BaseRepository<M> where M: BaseModel {
     fn get_one(&self, id: &str) -> Option<M>;
     fn create(&mut self, data: M) -> M;
     fn update(&mut self, id: &str, data: M) -> Result<M, RepositoryError>;
+    fn delete<'a>(&mut self, id: &'a str) -> Result<(), RepositoryError>;
 }

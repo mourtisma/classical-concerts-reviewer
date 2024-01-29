@@ -1,6 +1,6 @@
 use crate::model::base_model::BaseModel;
 
-use super::{base_repository::BaseRepository, error::RepositoryError, list_options::ListOptions};
+use super::{base_repository::BaseRepository, error::{RepositoryError, RepositoryErrorType}, list_options::ListOptions};
 
 pub struct InMemoryRepository<M> where M: BaseModel {
     data: Vec<M>
@@ -37,9 +37,37 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
             Ok(item)
         } else {
             Err(RepositoryError {
-                error_type: super::error::RepositoryErrorType::NotFound,
+                error_type: RepositoryErrorType::NotFound,
                 message: None
             })
         }
+    }
+
+    fn delete<'a>(&mut self, id: &'a str) -> Result<(), RepositoryError> {
+        let items = &mut self.data;
+        let num_items_before = items.len();
+
+        if let Some(_) = items.iter_mut().find(|x| x.id() == id).cloned() {
+            items.retain(|x| x.id() == id);
+            let num_items_after = items.len();
+            if num_items_before - num_items_after <= 0 {
+                Err(RepositoryError {
+                    error_type: RepositoryErrorType::Unknown,
+                    message: None
+                })
+            } else {
+                Ok(())
+            }
+            
+        } else {
+            Err(RepositoryError {
+                error_type: RepositoryErrorType::NotFound,
+                message: None
+            })
+        }
+        
+        
+
+
     }
 }
