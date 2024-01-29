@@ -1,15 +1,18 @@
+use std::marker::PhantomData;
+
 use crate::model::base_model::BaseModel;
 
 use super::{base_repository::BaseRepository, error::{RepositoryError, RepositoryErrorType}, list_options::ListOptions};
 
-pub struct InMemoryRepository<M> where M: BaseModel {
-    data: Vec<M>
+pub struct InMemoryRepository<'a, M> where M: BaseModel<'a> {
+    data: Vec<M>,
+    _phantom_data: PhantomData<&'a M>
 }
 
-impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
+impl<'a, M> BaseRepository<'a, M> for InMemoryRepository<'a, M> where M: BaseModel<'a> {
     fn new() -> Self where Self: Sized {
        let data = M::populate_data();
-       let repository = InMemoryRepository { data: data };
+       let repository = InMemoryRepository { data: data, _phantom_data: PhantomData };
 
        repository
     }
@@ -30,7 +33,7 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
         data
     }
 
-    fn update(&mut self, id: &str, data: M) -> Result<M, RepositoryError> {
+    fn update(&mut self, id: &str, data: M) -> Result<M, RepositoryError<'a>> {
         let items = &mut self.data;
         if let Some(mut item) = items.iter_mut().find(|x| x.id() == id).cloned() {
             item = data;
@@ -43,7 +46,7 @@ impl<M> BaseRepository<M> for InMemoryRepository<M> where M: BaseModel {
         }
     }
 
-    fn delete(&mut self, id: &str) -> Result<(), RepositoryError> {
+    fn delete(&mut self, id: &str) -> Result<(), RepositoryError<'a>> {
         let items = &mut self.data;
         let num_items_before = items.len();
 

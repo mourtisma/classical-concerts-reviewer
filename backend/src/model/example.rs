@@ -9,9 +9,9 @@ pub struct Example<'a> {
     pub id: &'a str
 }
 
-impl<'a> BaseModel for Example<'a>{
-    fn id(self) -> String {
-        self.id.to_string()
+impl<'a> BaseModel<'a> for Example<'a>{
+    fn id(self) -> &'a str {
+        self.id
     }
     
     fn populate_data() -> Vec<Example<'a>> {

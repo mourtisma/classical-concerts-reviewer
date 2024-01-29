@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use rocket::http::Status;
 use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
 use crate::repository::list_options::ListOptions;
@@ -24,7 +26,7 @@ fn list<'a>() -> Json<SuccessGetManyResult<Example<'a>>> {
 }
 
 #[get("/<id>")]
-fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Status, Json<ErrorResult>)> {
+fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let service = BaseService::<Example> {
         repository:  Box::new(repository),
@@ -53,7 +55,7 @@ fn create<'a>(example: Json<Example<'a>>) -> (Status, Json<SuccessCreateResult<E
 }
 
 #[put("/<id>", data="<example>")]
-fn update<'a>(id: &str, example: Json<Example<'a>>) -> Result<Json<SuccessUpdateResult<Example<'a>>>, (Status, Json<ErrorResult>)> {
+fn update<'a>(id: &'a str, example: Json<Example<'a>>) -> Result<Json<SuccessUpdateResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
         repository:  Box::new(repository),

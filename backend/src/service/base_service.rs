@@ -2,11 +2,11 @@ use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepo
 
 use super::{result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}, error::{to_api_error, ApiError, NotFoundError}};
 
-pub struct BaseService<'a, M> where M: BaseModel {
-    pub repository: Box<dyn BaseRepository<M> + 'a>,
+pub struct BaseService<'a, M> where M: BaseModel<'a> {
+    pub repository: Box<dyn BaseRepository<'a, M> + 'a>,
 }
 
-impl<'a, M> BaseService<'a, M> where M: BaseModel {
+impl<'a, M> BaseService<'a, M> where M: BaseModel<'a> {
     pub fn get_many(&self, options: ListOptions) -> SuccessGetManyResult<M> {
         let items = self.repository.get_many(options);
 
@@ -16,7 +16,7 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel {
         }
     }
 
-    pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError> {
+    pub fn get_one(&self, id: &str) -> Result<SuccessGetOneResult<M>, impl ApiError<'a> + Copy> {
         if let Some(item) = self.repository.get_one(id) {
             Ok(SuccessGetOneResult {
                 status: ResponseStatus::Success,
@@ -37,7 +37,7 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel {
         }
     }
 
-    pub fn update(&mut self, id: &str, data: M) -> Result<SuccessUpdateResult<M>, Box<dyn ApiError>> {
+    pub fn update(&mut self, id: &'a str, data: M) -> Result<SuccessUpdateResult<M>, Box<dyn ApiError<'a> + 'a>> {
         let update_result = self.repository.update(id, data);
 
         match update_result {
@@ -49,7 +49,7 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel {
         }
     }
 
-    pub fn delete(&mut self, id: &str) -> Result<(), Box<dyn ApiError>> {
+    pub fn delete(&mut self, id: &'a str) -> Result<(), Box<dyn ApiError<'a> + 'a>> {
         let delete_result = self.repository.delete(id);
 
         match delete_result {

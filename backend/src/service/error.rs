@@ -3,29 +3,29 @@ use crate::{repository::error::RepositoryError, repository::error::RepositoryErr
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
-pub struct ErrorResult {
+pub struct ErrorResult<'a> {
     pub status: ResponseStatus,
-    pub message: String
+    pub message: &'a str
 }
 
-pub trait ApiError {
-    fn new(message: Option<String>) -> Self where Self:Sized;
+pub trait ApiError<'a> {
+    fn new(message: Option<&'a str>) -> Self where Self:Sized;
     fn http_status(&self) -> Status;
-    fn to_result(&self) -> ErrorResult;
+    fn to_result(&self) -> ErrorResult<'a>;
 }
 
-#[derive(Clone)]
-pub struct NotFoundError {
+#[derive(Clone, Copy)]
+pub struct NotFoundError<'a> {
     http_status: Status,
-    message: String
+    message: &'a str
 }
 
 
-impl<'a> ApiError for NotFoundError {
-    fn new(message: Option<String>) -> Self {
+impl<'a> ApiError<'a> for NotFoundError<'a> {
+    fn new(message: Option<&'a str>) -> Self {
         NotFoundError {
             http_status: Status::NotFound,
-            message: message.unwrap_or(String::from("Record was not found"))
+            message: message.unwrap_or("Record was not found")
         }
     }
 
@@ -33,25 +33,26 @@ impl<'a> ApiError for NotFoundError {
         self.http_status
     }
 
-    fn to_result(&self) -> ErrorResult {
+    fn to_result(&self) -> ErrorResult<'a> {
         ErrorResult {
             status: ResponseStatus::Error,
-            message: self.message.to_string(),
+            message: self.message,
         }
     }
 }
 
-pub struct UnknownError {
+#[derive(Clone, Copy)]
+pub struct UnknownError<'a> {
     http_status: Status,
-    message: String
+    message: &'a str
 }
 
 
-impl ApiError for UnknownError {
-    fn new(message: Option<String>) -> Self {
+impl<'a> ApiError<'a> for UnknownError<'a> {
+    fn new(message: Option<&'a str>) -> Self {
         UnknownError {
             http_status: Status::InternalServerError,
-            message: message.unwrap_or(String::from("Unknown error"))
+            message: message.unwrap_or("Unknown error")
         }
     }
 
@@ -59,15 +60,15 @@ impl ApiError for UnknownError {
         self.http_status
     }
 
-    fn to_result(&self) -> ErrorResult {
+    fn to_result(&self) -> ErrorResult<'a> {
         ErrorResult {
             status: ResponseStatus::Error,
-            message: self.message.to_string(),
+            message: self.message,
         }
     }
 }
 
-pub fn to_api_error(rep_error: RepositoryError) -> Box<dyn ApiError> {
+pub fn to_api_error<'a>(rep_error: RepositoryError<'a>) -> Box<dyn ApiError<'a> + 'a> {
     match rep_error.error_type {
         RepositoryErrorType::NotFound => Box::new(NotFoundError::new(rep_error.message)),
         RepositoryErrorType::Unknown => Box::new(UnknownError::new(rep_error.message)),
