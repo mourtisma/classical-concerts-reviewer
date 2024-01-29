@@ -40,7 +40,7 @@ fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Statu
 }
 
 #[post("/", data="<example>")]
-fn create<'a>(example: Json<Example<'a>>) -> Json<SuccessCreateResult<Example<'a>>> {
+fn create<'a>(example: Json<Example<'a>>) -> (Status, Json<SuccessCreateResult<Example<'a>>>) {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
         repository:  Box::new(repository),
@@ -48,7 +48,7 @@ fn create<'a>(example: Json<Example<'a>>) -> Json<SuccessCreateResult<Example<'a
     
     let example = service.create(example.0);
     
-    Json(example)
+    (Status::Created, Json(example))
 
 }
 
