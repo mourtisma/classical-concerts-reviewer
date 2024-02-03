@@ -48,6 +48,11 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel<'a> {
     }
 
     pub fn update(&mut self, id: &'a str, data: M) -> Result<SuccessUpdateResult<M>, Box<dyn ApiError<'a> + 'a>> {
+        let validation_result = data.validate();
+        if validation_result.is_err() {
+            return Err(Box::new(ApiValidationError::new(None, validation_result.err())))
+        }
+
         let update_result = self.repository.update(id, data);
 
         match update_result {
