@@ -1,6 +1,11 @@
+use std::borrow::BorrowMut;
+
+use rocket::futures::future::err;
+use validator::ValidationErrors;
+
 use crate::{model::base_model::BaseModel, repository::{base_repository::BaseRepository, list_options::ListOptions}, status::ResponseStatus};
 
-use super::{result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}, error::{to_api_error, ApiError, NotFoundError}};
+use super::{result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}, error::{to_api_error, ApiError, ApiValidationError, NotFoundError}};
 
 pub struct BaseService<'a, M> where M: BaseModel<'a> {
     pub repository: Box<dyn BaseRepository<'a, M> + 'a>,
@@ -23,18 +28,23 @@ impl<'a, M> BaseService<'a, M> where M: BaseModel<'a> {
                 item
             })
         } else {
-            Err(NotFoundError::new(None))
+            Err(NotFoundError::new(None, None))
         }
         
     }
 
-    pub fn create(&mut self, data: M) -> SuccessCreateResult<M> {
+    pub fn create(&mut self, data: M) -> Result<SuccessCreateResult<M>, impl ApiError<'a>> {
+        let validation_result = data.validate();
+        if validation_result.is_err() {
+            return Err(ApiValidationError::new(None, validation_result.err()))
+        }
+
         let item = self.repository.create(data);
 
-        SuccessCreateResult {
+        Ok(SuccessCreateResult {
             status: ResponseStatus::Success,
             item
-        }
+        })
     }
 
     pub fn update(&mut self, id: &'a str, data: M) -> Result<SuccessUpdateResult<M>, Box<dyn ApiError<'a> + 'a>> {

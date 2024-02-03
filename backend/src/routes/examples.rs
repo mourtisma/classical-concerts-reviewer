@@ -7,7 +7,7 @@ use crate::service::base_service::BaseService;
 use crate::repository::in_memory_repository::InMemoryRepository;
 use crate::repository::base_repository::BaseRepository;
 
-use crate::model::example::Example;
+use crate::model::example::{self, Example};
 use crate::service::error::{ErrorResult, ApiError};
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
 
@@ -42,15 +42,19 @@ fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Statu
 }
 
 #[post("/", data="<example>")]
-fn create<'a>(example: Json<Example<'a>>) -> (Status, Json<SuccessCreateResult<Example<'a>>>) {
+fn create<'a>(example: Json<Example<'a>>) -> Result<(Status, Json<SuccessCreateResult<Example<'a>>>), (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
         repository:  Box::new(repository),
     };
     
-    let example = service.create(example.0);
-    
-    (Status::Created, Json(example))
+    match service.create(example.0) {
+        Ok(example) => Ok((Status::Created, Json(example))),
+        Err(api_error) => {
+            Err((api_error.http_status(), Json(api_error.to_result())))
+        }
+    }
+
 
 }
 
