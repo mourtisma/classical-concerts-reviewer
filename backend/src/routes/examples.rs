@@ -2,30 +2,34 @@ use std::marker::PhantomData;
 
 use rocket::http::Status;
 use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
+use rocket_db_pools::{Connection, Database};
+use crate::db::Ccr;
+use crate::repository::example_pg_repository::ExamplePgRepository;
 use crate::repository::list_options::ListOptions;
-use crate::service::base_service::BaseService;
-use crate::repository::in_memory_repository::InMemoryRepository;
-use crate::repository::base_repository::BaseRepository;
+
 
 use crate::model::example::{self, Example};
 use crate::service::error::{ErrorResult, ApiError};
+use crate::service::example_service::ExampleService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
 
 
 #[get("/")]
-fn list<'a>() -> Json<SuccessGetManyResult<Example<'a>>> {
-    let repository = InMemoryRepository::<Example>::new();
-    let service = BaseService::<Example> {
-        repository:  Box::new(repository),
+async fn list<'a>(mut connection: Connection<Ccr>) -> Json<SuccessGetManyResult<Example>> {
+    let repository = ExamplePgRepository {
+        connection: &mut connection
+    };
+    let mut service = ExampleService {
+        repository,
     };
     
 
-    let examples = service.get_many(ListOptions{order_by: None, page: None,limit: None});
+    let examples = service.get_many(ListOptions{order_by: None, page: None,limit: None}).await;
     
     Json(examples)
 }
 
-#[get("/<id>")]
+/* #[get("/<id>")]
 fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let service = BaseService::<Example> {
@@ -42,7 +46,7 @@ fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Statu
 }
 
 #[post("/", data="<example>")]
-fn create<'a>(example: Json<Example<'a>>) -> Result<(Status, Json<SuccessCreateResult<Example<'a>>>), (Status, Json<ErrorResult<'a>>)> {
+fn create<'a>(example: Json<Example>) -> Result<(Status, Json<SuccessCreateResult<Example>>), (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
         repository:  Box::new(repository),
@@ -88,10 +92,11 @@ fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
         }
     }
 
-}
+} */
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
-        rocket.mount("/examples", routes![list, detail, create, update, delete])
+        rocket.attach(Ccr::init())
+              .mount("/examples", routes![list])
     })
 }

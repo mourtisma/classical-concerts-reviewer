@@ -6,6 +6,8 @@ mod model;
 mod repository;
 mod service;
 mod status;
+mod db;
+mod schema;
 
 #[launch]
 fn rocket() -> _ {

@@ -11,8 +11,7 @@ diesel::table! {
     use super::sql_types::Citext;
 
     examples (id) {
-        id -> Citext,
-        name -> Citext,
-        created_at -> Nullable<Timestamp>,
+        id -> VarChar,
+        name -> VarChar
     }
 }
