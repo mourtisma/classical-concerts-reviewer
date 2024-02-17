@@ -15,18 +15,25 @@ use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessG
 
 
 #[get("/")]
-async fn list<'a>(mut connection: Connection<Ccr>) -> Json<SuccessGetManyResult<Example>> {
+async fn list<'a>(mut connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
-        connection: &mut connection
+        connection,
+        _phantomData: PhantomData
     };
     let mut service = ExampleService {
         repository,
     };
     
 
-    let examples = service.get_many(ListOptions{order_by: None, page: None,limit: None}).await;
+    let examples_result = service.get_many(ListOptions{order_by: None, page: None,limit: None}).await;
     
-    Json(examples)
+    match examples_result {
+        Ok(examples) => Ok(Json(examples)),
+        Err(api_error) => {
+            Err((api_error.http_status(), Json(api_error.to_result())))
+        }
+    }
+    
 }
 
 /* #[get("/<id>")]
