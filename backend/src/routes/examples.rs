@@ -36,14 +36,17 @@ async fn list<'a>(connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResu
     
 }
 
-/* #[get("/<id>")]
-fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
-    let repository = InMemoryRepository::<Example>::new();
-    let service = BaseService::<Example> {
-        repository:  Box::new(repository),
+#[get("/<id>")]
+async fn detail<'a>(connection: Connection<Ccr>, id: &str) -> Result<Json<SuccessGetOneResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+    let repository = ExamplePgRepository {
+        connection,
+        _phantomData: PhantomData
+    };
+    let mut service = ExampleService {
+        repository,
     };
     
-    match service.get_one(id) {
+    match service.get_one(id).await {
         Ok(res) => Ok(Json(res)),
         Err(api_error) => {
             Err((api_error.http_status(), Json(api_error.to_result())))
@@ -52,7 +55,7 @@ fn detail<'a>(id: &str) -> Result<Json<SuccessGetOneResult<Example<'a>>>, (Statu
 
 }
 
-#[post("/", data="<example>")]
+/*#[post("/", data="<example>")]
 fn create<'a>(example: Json<Example>) -> Result<(Status, Json<SuccessCreateResult<Example>>), (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
@@ -104,6 +107,6 @@ fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
         rocket.attach(Ccr::init())
-              .mount("/examples", routes![list])
+              .mount("/examples", routes![list, detail])
     })
 }

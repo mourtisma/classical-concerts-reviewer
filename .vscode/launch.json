@@ -8,9 +8,10 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/<executable file>",
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "program": "${workspaceFolder}/backend/target/debug/backend",
+            "args": ["${env:ROCKET_DATABASES}"],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/backend/.env"
         }
     ]
 }
