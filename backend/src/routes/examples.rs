@@ -75,14 +75,17 @@ async fn create<'a>(connection: Connection<Ccr>, example: Json<ExampleSave>) -> 
 
 }
 
-/*#[put("/<id>", data="<example>")]
-fn update<'a>(id: &'a str, example: Json<Example<'a>>) -> Result<Json<SuccessUpdateResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
-    let repository = InMemoryRepository::<Example>::new();
-    let mut service = BaseService::<Example> {
-        repository:  Box::new(repository),
+#[put("/<id>", data="<example>")]
+async fn update<'a>(connection: Connection<Ccr>, id: &'a str, example: Json<ExampleSave>) -> Result<Json<SuccessUpdateResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+    let repository = ExamplePgRepository {
+        connection,
+        _phantomData: PhantomData
+    };
+    let mut service = ExampleService {
+        repository,
     };
     
-    match service.update(id, example.0) {
+    match service.update(id, example.0).await {
         Ok(res) => Ok(Json(res)),
         Err(api_error) => {
             Err((api_error.http_status(), Json(api_error.to_result())))
@@ -91,7 +94,7 @@ fn update<'a>(id: &'a str, example: Json<Example<'a>>) -> Result<Json<SuccessUpd
 
 }
 
-#[delete("/<id>")]
+/*#[delete("/<id>")]
 fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
@@ -110,6 +113,6 @@ fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
         rocket.attach(Ccr::init())
-              .mount("/examples", routes![list, detail, create])
+              .mount("/examples", routes![list, detail, create, update])
     })
 }

@@ -1,4 +1,4 @@
-use diesel::{expression::AsExpression, Selectable};
+use diesel::{expression::AsExpression, query_builder::AsChangeset, Selectable};
 use rocket::{serde::{Deserialize, Serialize}};
 use rocket_db_pools::diesel::{Queryable, Insertable};
 use uuid::Uuid;
@@ -23,7 +23,7 @@ impl BaseModel for Example {
 
 }
 
-#[derive(Clone, Deserialize, Insertable, Validate)]
+#[derive(Clone, Deserialize, Insertable, Validate, AsChangeset)]
 #[diesel(table_name = crate::schema::examples)]
 #[serde(crate = "rocket::serde")]
 pub struct ExampleSave {

@@ -81,6 +81,37 @@ impl<'a> ExamplePgRepository<'a> {
         }
     }
 
+    pub async fn update(&mut self, example_id: &str, data: ExampleSave) -> Result<Example, RepositoryError<'a>> {
+        let update_result = diesel::update(examples)
+        .filter(id.eq(example_id))
+        .set(data)
+        .returning(Example::as_returning())
+        .get_result(&mut self.connection).await;
+        
+        if let Err(update_error) = update_result {
+                match update_error {
+                    diesel::result::Error::NotFound => Err(RepositoryError {
+                        error_type: RepositoryErrorType::NotFound,
+                        message: None,
+                        diesel_error: Some(update_error)
+                    }),
+                    _ => Err(RepositoryError {
+                        error_type: RepositoryErrorType::Unknown,
+                        message: Some("An unknow error occurred"),
+                        diesel_error: Some(update_error)
+                    })
+                }
+        } else if let Ok(updated_example) = update_result {
+            Ok(updated_example) 
+        } else {
+            Err(RepositoryError {
+                error_type: RepositoryErrorType::Unknown,
+                message: Some("An unknow error occurred"),
+                diesel_error: None
+            })
+        }
+    }
+
       
 
 }

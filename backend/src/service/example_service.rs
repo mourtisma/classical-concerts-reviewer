@@ -2,7 +2,7 @@ use validator::Validate;
 
 use crate::{model::example::{Example, ExampleSave}, repository::{example_pg_repository::ExamplePgRepository, list_options::ListOptions}, status::ResponseStatus};
 
-use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult}};
+use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
 pub struct ExampleService<'a> {
     pub repository: ExamplePgRepository<'a>
@@ -57,5 +57,22 @@ impl<'a> ExampleService<'a> {
             })
         }
         
+    }
+
+    pub async fn update(&mut self, id: &'a str, data: ExampleSave) -> Result<SuccessUpdateResult<Example>, Box<dyn ApiError<'a> + 'a>> {
+        let validation_result = data.validate();
+        if validation_result.is_err() {
+            return Err(Box::new(ApiValidationError::new(None, validation_result.err())))
+        }
+
+        let repository_result = self.repository.update(id, data).await;
+
+        match repository_result {
+            Err(rep_err) => Err(to_api_error(rep_err)),
+            Ok(item) => Ok(SuccessUpdateResult {
+                status: ResponseStatus::Success,
+                item
+            })
+        }
     }
 }
