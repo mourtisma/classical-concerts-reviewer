@@ -15,7 +15,7 @@ use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessG
 
 
 #[get("/")]
-async fn list<'a>(mut connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+async fn list<'a>(connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
         _phantomData: PhantomData
