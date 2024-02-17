@@ -112,6 +112,30 @@ impl<'a> ExamplePgRepository<'a> {
         }
     }
 
+    pub async fn delete(&mut self, example_id: &str) -> Result<(), RepositoryError<'a>> {
+        let delete_result = diesel::delete(examples.filter(id.eq(example_id)))
+        .execute(&mut self.connection).await;
+
+        if let Ok(number_of_deleted_records) = delete_result {
+            if number_of_deleted_records > 0 {
+                Ok(())
+            } else {
+                Err(RepositoryError {
+                    error_type: RepositoryErrorType::NotFound,
+                        message: None,
+                        diesel_error: None
+                })
+            }
+        } else {
+            Err(RepositoryError {
+                error_type: RepositoryErrorType::Unknown,
+                message: Some("An unknow error occurred"),
+                diesel_error: None
+            })
+        }
+        
+    }
+
       
 
 }

@@ -94,25 +94,29 @@ async fn update<'a>(connection: Connection<Ccr>, id: &'a str, example: Json<Exam
 
 }
 
-/*#[delete("/<id>")]
-fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
-    let repository = InMemoryRepository::<Example>::new();
-    let mut service = BaseService::<Example> {
-        repository:  Box::new(repository),
+#[delete("/<id>")]
+async fn delete<'a>(connection: Connection<Ccr>, id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
+    let repository = ExamplePgRepository {
+        connection,
+        _phantomData: PhantomData
+    };
+    let mut service = ExampleService {
+        repository,
     };
     
-    match service.delete(id) {
+    
+    match service.delete(id).await {
         Ok(_) => Ok(Status::NoContent),
         Err(api_error) => {
             Err((api_error.http_status(), Json(api_error.to_result())))
         }
     }
 
-} */
+}
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
         rocket.attach(Ccr::init())
-              .mount("/examples", routes![list, detail, create, update])
+              .mount("/examples", routes![list, detail, create, update, delete])
     })
 }

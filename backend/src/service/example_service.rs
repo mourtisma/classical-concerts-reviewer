@@ -75,4 +75,13 @@ impl<'a> ExampleService<'a> {
             })
         }
     }
+
+    pub async fn delete(&mut self, id: &'a str) -> Result<(), Box<dyn ApiError<'a> + 'a>> {
+        let delete_result = self.repository.delete(id).await;
+
+        match delete_result {
+            Err(rep_err) => Err(to_api_error(rep_err)),
+            Ok(()) => Ok(())
+        }
+    }
 }
