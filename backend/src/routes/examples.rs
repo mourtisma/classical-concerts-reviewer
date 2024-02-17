@@ -8,7 +8,7 @@ use crate::repository::example_pg_repository::ExamplePgRepository;
 use crate::repository::list_options::ListOptions;
 
 
-use crate::model::example::{self, Example};
+use crate::model::example::{self, Example, ExampleSave};
 use crate::service::error::{ErrorResult, ApiError};
 use crate::service::example_service::ExampleService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
@@ -55,14 +55,17 @@ async fn detail<'a>(connection: Connection<Ccr>, id: &str) -> Result<Json<Succes
 
 }
 
-/*#[post("/", data="<example>")]
-fn create<'a>(example: Json<Example>) -> Result<(Status, Json<SuccessCreateResult<Example>>), (Status, Json<ErrorResult<'a>>)> {
-    let repository = InMemoryRepository::<Example>::new();
-    let mut service = BaseService::<Example> {
-        repository:  Box::new(repository),
+#[post("/", data="<example>")]
+async fn create<'a>(connection: Connection<Ccr>, example: Json<ExampleSave>) -> Result<(Status, Json<SuccessCreateResult<Example>>), (Status, Json<ErrorResult<'a>>)> {
+    let repository = ExamplePgRepository {
+        connection,
+        _phantomData: PhantomData
+    };
+    let mut service = ExampleService {
+        repository,
     };
     
-    match service.create(example.0) {
+    match service.create(example.0).await {
         Ok(example) => Ok((Status::Created, Json(example))),
         Err(api_error) => {
             Err((api_error.http_status(), Json(api_error.to_result())))
@@ -72,7 +75,7 @@ fn create<'a>(example: Json<Example>) -> Result<(Status, Json<SuccessCreateResul
 
 }
 
-#[put("/<id>", data="<example>")]
+/*#[put("/<id>", data="<example>")]
 fn update<'a>(id: &'a str, example: Json<Example<'a>>) -> Result<Json<SuccessUpdateResult<Example<'a>>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = InMemoryRepository::<Example>::new();
     let mut service = BaseService::<Example> {
@@ -107,6 +110,6 @@ fn delete<'a>(id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
         rocket.attach(Ccr::init())
-              .mount("/examples", routes![list, detail])
+              .mount("/examples", routes![list, detail, create])
     })
 }

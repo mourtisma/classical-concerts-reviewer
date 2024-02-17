@@ -1,6 +1,8 @@
-use crate::{model::example::Example, repository::{example_pg_repository::ExamplePgRepository, list_options::ListOptions}, status::ResponseStatus};
+use validator::Validate;
 
-use super::{error::{to_api_error, ApiError, NotFoundError, UnknownError}, result::{SuccessGetManyResult, SuccessGetOneResult}};
+use crate::{model::example::{Example, ExampleSave}, repository::{example_pg_repository::ExamplePgRepository, list_options::ListOptions}, status::ResponseStatus};
+
+use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult}};
 
 pub struct ExampleService<'a> {
     pub repository: ExamplePgRepository<'a>
@@ -35,6 +37,24 @@ impl<'a> ExampleService<'a> {
             return Err(to_api_error(repository_error))
         } else {
             return Err(Box::new(UnknownError::new(None, None)))
+        }
+        
+    }
+
+    pub async fn create(&mut self, data: ExampleSave) -> Result<SuccessCreateResult<Example>, Box<dyn ApiError<'a> + 'a>> {
+        let validation_result = data.validate();
+        if validation_result.is_err() {
+            return Err(Box::new(ApiValidationError::new(None, validation_result.err())))
+        }
+
+        let repository_result = self.repository.create(data).await;
+
+        match repository_result {
+            Err(rep_error) => Err(to_api_error(rep_error)),
+            Ok(item) => Ok(SuccessCreateResult {
+                status: ResponseStatus::Success,
+                item
+            })
         }
         
     }

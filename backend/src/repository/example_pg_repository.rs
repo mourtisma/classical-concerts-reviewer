@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, vec};
 
 use rocket_db_pools::{diesel::prelude::*, Connection};
-use crate::{db::Ccr, model::example::Example, schema::examples::dsl::*};
+use crate::{db::Ccr, model::example::{Example, ExampleSave}, schema::examples::dsl::*};
 
 use super::{error::{RepositoryError, RepositoryErrorType}, list_options::ListOptions};
 
@@ -62,6 +62,22 @@ impl<'a> ExamplePgRepository<'a> {
                 Some(example) => Ok(Some(example)),
                 None => Ok(None),    
             }
+        }
+    }
+
+    pub async fn create(&mut self, data: ExampleSave) -> Result<Example, RepositoryError<'a>> {
+        let insert_result = diesel::insert_into(examples)
+        .values(data)
+        .returning(Example::as_returning())
+        .get_result(&mut self.connection).await;
+        
+        match insert_result {
+            Err(diesel_error) => Err(RepositoryError {
+                error_type: RepositoryErrorType::Unknown,
+                message: Some("An unknow error occurred"),
+                diesel_error: Some(diesel_error)
+            }),
+            Ok(new_example) => Ok(new_example)
         }
     }
 
