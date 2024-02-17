@@ -26,13 +26,10 @@ impl<'a> ExampleService<'a> {
         let repository_result = self.repository.get_one(example_id).await;
         
         if let Ok(item) = repository_result {
-            match item {
-                None => Err(Box::new(NotFoundError::new(None, None))),
-                Some(item) => Ok(SuccessGetOneResult {
+            Ok(SuccessGetOneResult {
                     status: ResponseStatus::Success,
                     item
                 })
-            }
         } else if let Err(repository_error) = repository_result {
             return Err(to_api_error(repository_error))
         } else {
