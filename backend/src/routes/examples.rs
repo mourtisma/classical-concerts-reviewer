@@ -7,18 +7,18 @@ use sea_orm::DatabaseConnection;
 
 use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto};
 use crate::model::prelude::{ExampleActiveModel, ExampleSeaOrm};
-use crate::repository::example_pg_repository::ExamplePgRepository;
+use crate::repository::base_seaorm_repository::BaseSeaOrmRepository;
 use crate::repository::list_options::ListOptions;
 
 use crate::service::error::{ErrorResult, ApiError};
-use crate::service::example_service::ExampleService;
+use crate::service::base_service::BaseService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
 use crate::transformer::example_transformer::ExampleTransformer;
 
 
 #[get("/")]
 async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<SuccessGetManyResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
-    let repository = ExamplePgRepository {
+    let repository = BaseSeaOrmRepository {
         connection,
         _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
@@ -28,7 +28,7 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
     _phantom_transformer: PhantomData::<ExampleTransformer>,
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
-    let mut service = ExampleService {
+    let mut service = BaseService {
         repository,
     };
     
@@ -46,7 +46,7 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
 
 #[get("/<id>")]
 async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Json<SuccessGetOneResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
-    let repository = ExamplePgRepository {
+    let repository = BaseSeaOrmRepository {
         connection,
         _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
@@ -57,7 +57,7 @@ async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
 
-    let mut service = ExampleService {
+    let mut service = BaseService {
         repository,
     };
     
@@ -72,7 +72,7 @@ async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
 
 #[post("/", data="<example>")]
 async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<ExampleCreateDto>) -> Result<(Status, Json<SuccessCreateResult<ExampleGetDto>>), (Status, Json<ErrorResult<'a>>)> {
-    let repository = ExamplePgRepository {
+    let repository = BaseSeaOrmRepository {
         connection,
         _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
@@ -82,7 +82,7 @@ async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<Exa
     _phantom_transformer: PhantomData::<ExampleTransformer>,
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
-    let mut service = ExampleService {
+    let mut service = BaseService {
         repository,
     };
     
@@ -98,7 +98,7 @@ async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<Exa
 
 #[put("/<id>", data="<example>")]
 async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, example: Json<ExampleUpdateDto>) -> Result<Json<SuccessUpdateResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
-    let repository = ExamplePgRepository {
+    let repository = BaseSeaOrmRepository {
         connection,
         _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
@@ -108,7 +108,7 @@ async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, exam
     _phantom_transformer: PhantomData::<ExampleTransformer>,
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
-    let mut service = ExampleService {
+    let mut service = BaseService {
         repository,
     };
     
@@ -123,7 +123,7 @@ async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, exam
 
 #[delete("/<id>")]
 async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Status, (Status, Json<ErrorResult<'a>>)> {
-    let repository = ExamplePgRepository {
+    let repository = BaseSeaOrmRepository {
         connection,
         _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
@@ -133,7 +133,7 @@ async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
     _phantom_transformer: PhantomData::<ExampleTransformer>,
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
-    let mut service = ExampleService {
+    let mut service = BaseService {
         repository,
     };
     

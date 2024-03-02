@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{model::prelude::*, transformer::sea_orm_transformer::SeaOrmTransformer};
 use super::{error::{RepositoryError, RepositoryErrorType}, list_options::ListOptions};
 
-pub struct ExamplePgRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
+pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
     pub _phantom_lifetime: PhantomData<&'a String>,
     pub _phantom_sea_orm: PhantomData<SeaOrmModel>,
@@ -18,7 +18,7 @@ pub struct ExamplePgRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, Upd
 
 
 impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> 
-    ExamplePgRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> where 
+    BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> where 
         SeaOrmModel: EntityTrait,
         Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, SeaOrmModel, AM>,
         AM: ActiveModelBehavior + std::marker::Send, {

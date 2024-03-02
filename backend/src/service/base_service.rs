@@ -2,16 +2,16 @@ use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveMode
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{repository::{example_pg_repository::ExamplePgRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{repository::{base_seaorm_repository::BaseSeaOrmRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
-pub struct ExampleService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> {
-    pub repository: ExamplePgRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>
+pub struct BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> {
+    pub repository: BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>
 }
 
 impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> 
-    ExampleService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>  where 
+    BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>  where 
     SeaOrmModel: EntityTrait,
     CreateModelDto: Validate,
     UpdateModelDto: Validate,
