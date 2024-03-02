@@ -7,7 +7,6 @@ use super::{error::{RepositoryError, RepositoryErrorType}, list_options::ListOpt
 
 pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
-    pub _phantom_lifetime: PhantomData<&'a String>,
     pub _phantom_sea_orm: PhantomData<SeaOrmModel>,
     pub _phantom_get: PhantomData<GetModelDto>,
     pub _phantom_create: PhantomData<CreateModelDto>,

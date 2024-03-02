@@ -20,7 +20,6 @@ use crate::transformer::example_transformer::ExampleTransformer;
 async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<SuccessGetManyResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = BaseSeaOrmRepository {
         connection,
-        _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
@@ -48,7 +47,6 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
 async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Json<SuccessGetOneResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = BaseSeaOrmRepository {
         connection,
-        _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
@@ -74,7 +72,6 @@ async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
 async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<ExampleCreateDto>) -> Result<(Status, Json<SuccessCreateResult<ExampleGetDto>>), (Status, Json<ErrorResult<'a>>)> {
     let repository = BaseSeaOrmRepository {
         connection,
-        _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
@@ -100,7 +97,6 @@ async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<Exa
 async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, example: Json<ExampleUpdateDto>) -> Result<Json<SuccessUpdateResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = BaseSeaOrmRepository {
         connection,
-        _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
@@ -125,7 +121,6 @@ async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, exam
 async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Status, (Status, Json<ErrorResult<'a>>)> {
     let repository = BaseSeaOrmRepository {
         connection,
-        _phantom_lifetime: PhantomData,
         _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
