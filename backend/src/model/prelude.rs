@@ -3,3 +3,4 @@
 pub use super::example_sea_orm::Entity as ExampleSeaOrm;
 pub use super::example_sea_orm::Model as ExampleSeaOrmModel;
 pub use super::example_sea_orm::ActiveModel as ExampleActiveModel;
+pub use super::example_sea_orm_with_relation::Entity as ExampleSeaOrmWithRelation;

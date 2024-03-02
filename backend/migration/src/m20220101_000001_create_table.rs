@@ -33,7 +33,7 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(DeriveIden)]
-enum ExampleSeaOrm {
+pub enum ExampleSeaOrm {
     Table,
     Id,
     Name,
