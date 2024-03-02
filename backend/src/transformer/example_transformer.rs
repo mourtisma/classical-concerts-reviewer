@@ -1,4 +1,5 @@
-use sea_orm::{ActiveValue::NotSet, Set};
+use chrono::Utc;
+use sea_orm::{prelude::*, ActiveValue::NotSet, Set};
 use uuid::Uuid;
 
 use crate::{dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto}, model::{example_sea_orm, prelude::{ExampleActiveModel, ExampleSeaOrm, ExampleSeaOrmModel}}};
@@ -21,7 +22,8 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
         ExampleActiveModel {
             id: NotSet,
             name: Set(dto.name.unwrap()),
-            created_at: NotSet
+            created_at: NotSet,
+            updated_at: NotSet,
         }
     }
 
@@ -29,7 +31,8 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
         ExampleActiveModel {
             id: Set(Uuid::parse_str(id).unwrap()),
             name: Set(dto.name.unwrap()),
-            created_at: NotSet
+            created_at: NotSet,
+            updated_at: Set(Utc::now().naive_utc())
         }
     }
 
