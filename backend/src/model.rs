@@ -1,3 +1,4 @@
-pub mod base_model;
+pub mod prelude;
 
-pub mod example;
+pub mod example_sea_orm;
+pub mod examples;

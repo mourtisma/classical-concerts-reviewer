@@ -1,24 +1,32 @@
 use std::marker::PhantomData;
 
 use rocket::http::Status;
+use rocket::State;
 use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
-use rocket_db_pools::{Connection, Database};
-use crate::db::Ccr;
+use sea_orm::DatabaseConnection;
+
+use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto};
+use crate::model::prelude::{ExampleActiveModel, ExampleSeaOrm};
 use crate::repository::example_pg_repository::ExamplePgRepository;
 use crate::repository::list_options::ListOptions;
 
-
-use crate::model::example::{self, Example, ExampleSave};
 use crate::service::error::{ErrorResult, ApiError};
 use crate::service::example_service::ExampleService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
+use crate::transformer::example_transformer::ExampleTransformer;
 
 
 #[get("/")]
-async fn list<'a>(connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<SuccessGetManyResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
-        _phantomData: PhantomData
+        _phantom_lifetime: PhantomData,
+        _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+    _phantom_get: PhantomData,
+    _phantom_create: PhantomData::<ExampleCreateDto>,
+    _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_transformer: PhantomData::<ExampleTransformer>,
+    _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
     let mut service = ExampleService {
         repository,
@@ -37,11 +45,18 @@ async fn list<'a>(connection: Connection<Ccr>) -> Result<Json<SuccessGetManyResu
 }
 
 #[get("/<id>")]
-async fn detail<'a>(connection: Connection<Ccr>, id: &str) -> Result<Json<SuccessGetOneResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Json<SuccessGetOneResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
-        _phantomData: PhantomData
+        _phantom_lifetime: PhantomData,
+        _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+    _phantom_get: PhantomData,
+    _phantom_create: PhantomData::<ExampleCreateDto>,
+    _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_transformer: PhantomData::<ExampleTransformer>,
+    _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
+
     let mut service = ExampleService {
         repository,
     };
@@ -56,10 +71,16 @@ async fn detail<'a>(connection: Connection<Ccr>, id: &str) -> Result<Json<Succes
 }
 
 #[post("/", data="<example>")]
-async fn create<'a>(connection: Connection<Ccr>, example: Json<ExampleSave>) -> Result<(Status, Json<SuccessCreateResult<Example>>), (Status, Json<ErrorResult<'a>>)> {
+async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<ExampleCreateDto>) -> Result<(Status, Json<SuccessCreateResult<ExampleGetDto>>), (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
-        _phantomData: PhantomData
+        _phantom_lifetime: PhantomData,
+        _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+    _phantom_get: PhantomData,
+    _phantom_create: PhantomData::<ExampleCreateDto>,
+    _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_transformer: PhantomData::<ExampleTransformer>,
+    _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
     let mut service = ExampleService {
         repository,
@@ -76,10 +97,16 @@ async fn create<'a>(connection: Connection<Ccr>, example: Json<ExampleSave>) -> 
 }
 
 #[put("/<id>", data="<example>")]
-async fn update<'a>(connection: Connection<Ccr>, id: &'a str, example: Json<ExampleSave>) -> Result<Json<SuccessUpdateResult<Example>>, (Status, Json<ErrorResult<'a>>)> {
+async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, example: Json<ExampleUpdateDto>) -> Result<Json<SuccessUpdateResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
-        _phantomData: PhantomData
+        _phantom_lifetime: PhantomData,
+        _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+    _phantom_get: PhantomData,
+    _phantom_create: PhantomData::<ExampleCreateDto>,
+    _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_transformer: PhantomData::<ExampleTransformer>,
+    _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
     let mut service = ExampleService {
         repository,
@@ -95,10 +122,16 @@ async fn update<'a>(connection: Connection<Ccr>, id: &'a str, example: Json<Exam
 }
 
 #[delete("/<id>")]
-async fn delete<'a>(connection: Connection<Ccr>, id: &str) -> Result<Status, (Status, Json<ErrorResult>)> {
+async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Status, (Status, Json<ErrorResult<'a>>)> {
     let repository = ExamplePgRepository {
         connection,
-        _phantomData: PhantomData
+        _phantom_lifetime: PhantomData,
+        _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+    _phantom_get: PhantomData,
+    _phantom_create: PhantomData::<ExampleCreateDto>,
+    _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_transformer: PhantomData::<ExampleTransformer>,
+    _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
     let mut service = ExampleService {
         repository,
@@ -116,7 +149,6 @@ async fn delete<'a>(connection: Connection<Ccr>, id: &str) -> Result<Status, (St
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource", |rocket| async {
-        rocket.attach(Ccr::init())
-              .mount("/examples", routes![list, detail, create, update, delete])
+        rocket.mount("/examples", routes![list, detail, create, update, delete])
     })
 }
