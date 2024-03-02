@@ -65,7 +65,9 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
         
     }
 
-    pub async fn update(&mut self, id: &'a str, data: UpdateModelDto) -> Result<SuccessUpdateResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM> {
+    pub async fn update(&mut self, id: &'a str, data: UpdateModelDto) -> Result<SuccessUpdateResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where 
+    <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM>, 
+    <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<uuid::Uuid> {
         let validation_result = data.validate();
         if validation_result.is_err() {
             return Err(Box::new(ApiValidationError::new(None, validation_result.err())))

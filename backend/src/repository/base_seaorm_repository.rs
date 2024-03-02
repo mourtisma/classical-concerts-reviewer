@@ -90,7 +90,10 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
         }
     }
 
-    pub async fn update(&mut self, item_id: &'a str, data: UpdateModelDto) -> Result<GetModelDto, RepositoryError<'a>> where <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM> {
+    pub async fn update(&mut self, item_id: &'a str, data: UpdateModelDto) -> Result<GetModelDto, RepositoryError<'a>> where 
+    <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM>, 
+    <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<uuid::Uuid> {
+        self.get_one(item_id).await?;
         let active_model = Transformer::dto_to_update_active_model(data, item_id);
         let update_result = active_model.update(self.connection).await;
         
