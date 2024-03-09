@@ -41,7 +41,7 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(DeriveIden)]
-enum ExampleSeaOrmWithRelation {
+pub enum ExampleSeaOrmWithRelation {
     Table,
     Id,
     ExampleId,
