@@ -22,8 +22,6 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     ExampleSeaOrm,
-    #[sea_orm(has_many = "super::example_sea_orm_with_relation_example_many_to_many::Entity")]
-    ExampleSeaOrmWithRelationExampleManyToMany,
 }
 
 impl Related<super::example_sea_orm::Entity> for Entity {
@@ -32,9 +30,13 @@ impl Related<super::example_sea_orm::Entity> for Entity {
     }
 }
 
-impl Related<super::example_sea_orm_with_relation_example_many_to_many::Entity> for Entity {
+impl Related<super::example_many_to_many::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::ExampleSeaOrmWithRelationExampleManyToMany.def()
+        super::example_sea_orm_with_relation_example_many_to_many::Relation::ExampleManyToMany.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(super::example_sea_orm_with_relation_example_many_to_many::Relation::ExampleSeaOrmWithRelation.def().rev())
     }
 }
 

@@ -13,14 +13,15 @@ pub struct Model {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(has_many = "super::example_sea_orm_with_relation_example_many_to_many::Entity")]
-    ExampleSeaOrmWithRelationExampleManyToMany,
-}
+pub enum Relation {}
 
-impl Related<super::example_sea_orm_with_relation_example_many_to_many::Entity> for Entity {
+impl Related<super::example_sea_orm_with_relation::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::ExampleSeaOrmWithRelationExampleManyToMany.def()
+        super::example_sea_orm_with_relation_example_many_to_many::Relation::ExampleSeaOrmWithRelation.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(super::example_sea_orm_with_relation_example_many_to_many::Relation::ExampleManyToMany.def().rev())
     }
 }
 

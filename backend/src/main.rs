@@ -3,6 +3,7 @@ use std::env;
 use dotenvy::dotenv;
 use rocket::launch;
 use routes::examples;
+use routes::examples_with_relation;
 use sea_orm::Database;
 
 mod routes;
@@ -22,5 +23,5 @@ async fn rocket() -> _ {
         Ok(connection) => connection,
         Err(e) => panic!("{:?}",e)
     };
-    rocket::build().manage(connection).attach(examples::stage())
+    rocket::build().manage(connection).attach(examples::stage()).attach(examples_with_relation::stage())
 }
