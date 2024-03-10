@@ -3,7 +3,7 @@ use std::{marker::PhantomData, vec};
 use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, SqlErr, TryIntoModel};
 use uuid::Uuid;
 use crate::{model::prelude::*, transformer::sea_orm_transformer::SeaOrmTransformer};
-use super::{error::{RepositoryError, RepositoryErrorType}, list_options::ListOptions};
+use super::{error::{ORMError, RepositoryError, RepositoryErrorType}, list_options::ListOptions};
 
 pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
@@ -30,7 +30,10 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
             Err(RepositoryError {
                 error_type: RepositoryErrorType::Unknown,
                 message: Some("An unknow error occurred"),
-                orm_error: get_many_result.err()
+                orm_error: Some(ORMError {
+                    sea_orm_db_error: get_many_result.err(),
+                    sea_orm_transaction_error: None,
+                })
             })
         } else {
             match get_many_result.ok() {
@@ -49,16 +52,22 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
                 DbErr::RecordNotFound(_) => Err(RepositoryError { //TODO use the message arg for logs
                     error_type: RepositoryErrorType::NotFound,
                     message: Some("Record was not found"),
-                    orm_error: Some(get_one_error)
+                    orm_error: Some(ORMError {
+                        sea_orm_db_error: Some(get_one_error),
+                        sea_orm_transaction_error: None,
+                    })
                 }),
                 _ => Err(RepositoryError {
                     error_type: RepositoryErrorType::Unknown,
                     message: Some("An unknow error occurred"),
-                    orm_error: Some(get_one_error)
+                    orm_error: Some(ORMError {
+                        sea_orm_db_error: Some(get_one_error),
+                        sea_orm_transaction_error: None,
+                    })
                 })
             }
         } else if let Ok(item) = get_one_result {
-            match(item) {
+            match item {
                 Some(it) => Ok(Transformer::entity_to_get_dto(it)),
                 _ => Err(RepositoryError {
                     error_type: RepositoryErrorType::NotFound,
@@ -81,10 +90,13 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
         let insert_result = active_model.insert(self.connection).await;
         
         match insert_result {
-            Err(orm_error) => Err(RepositoryError {
+            Err(db_error) => Err(RepositoryError {
                 error_type: RepositoryErrorType::Unknown,
                 message: Some("An unknow error occurred"),
-                orm_error: Some(orm_error)
+                orm_error: Some(ORMError {
+                    sea_orm_db_error: Some(db_error),
+                    sea_orm_transaction_error: None,
+                })
             }),
             Ok(new_item) => Ok(Transformer::active_model_to_dto(new_item))
         }
@@ -102,12 +114,18 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
                     DbErr::RecordNotFound(_) => Err(RepositoryError { // TODO use the message arg for logs
                         error_type: RepositoryErrorType::NotFound,
                         message: Some("Record was not found"),
-                        orm_error: Some(update_error)
+                        orm_error: Some(ORMError {
+                            sea_orm_db_error: Some(update_error),
+                            sea_orm_transaction_error: None,
+                        })
                     }),
                     _ => Err(RepositoryError {
                         error_type: RepositoryErrorType::Unknown,
                         message: Some("An unknow error occurred"),
-                        orm_error: Some(update_error)
+                        orm_error: Some(ORMError {
+                            sea_orm_db_error: Some(update_error),
+                            sea_orm_transaction_error: None,
+                        })
                     })
                 }
         } else if let Ok(updated_example) = update_result {

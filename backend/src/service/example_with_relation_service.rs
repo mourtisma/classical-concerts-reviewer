@@ -2,7 +2,7 @@ use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveMode
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{dto::example_with_relation_dto::ExampleWithRelationGetDto, repository::{base_seaorm_repository::BaseSeaOrmRepository, example_with_relation_repository::ExampleWithRelationRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto}, repository::{base_seaorm_repository::BaseSeaOrmRepository, example_with_relation_repository::ExampleWithRelationRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
@@ -39,9 +39,9 @@ impl<'a> ExampleWithRelationService<'a> {
             return Err(Box::new(UnknownError::new(None, None)))
         }
         
-    }
+    } */
 
-    pub async fn create(&mut self, data: CreateModelDto) -> Result<SuccessCreateResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM> {
+    pub async fn create(&mut self, data: ExampleWithRelationCreateDto) -> Result<SuccessCreateResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
         let validation_result = data.validate();
         if validation_result.is_err() {
             return Err(Box::new(ApiValidationError::new(None, validation_result.err())))
@@ -59,7 +59,7 @@ impl<'a> ExampleWithRelationService<'a> {
         
     }
 
-    pub async fn update(&mut self, id: &'a str, data: UpdateModelDto) -> Result<SuccessUpdateResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where 
+    /* pub async fn update(&mut self, id: &'a str, data: UpdateModelDto) -> Result<SuccessUpdateResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where 
     <<AM as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<AM>, 
     <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<uuid::Uuid> {
         let validation_result = data.validate();

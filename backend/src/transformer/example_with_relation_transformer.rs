@@ -1,4 +1,7 @@
-use crate::{dto::example_with_relation_dto::ExampleWithRelationGetDto, model::prelude::{ExampleManyToManyModel, ExampleSeaOrmWithRelation, ExampleSeaOrmWithRelationModel}};
+use sea_orm::{ActiveValue::NotSet, Set};
+use uuid::Uuid;
+
+use crate::{dto::{example_many_to_many_dto, example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto}}, model::prelude::{ExampleManyToManyModel, ExampleSeaOrmWithRelation, ExampleSeaOrmWithRelationModel, ExampleWithRelationActiveModel, ExampleManyToManyActiveModel}};
 
 use super::example_many_to_many_transformer::ExampleManyToManyTransformer;
 
@@ -11,9 +14,24 @@ impl ExampleWithRelationTransformer {
 
         ExampleWithRelationGetDto {
             id: example_with_relation.id.to_string(),
+            example_id: example_with_relation.example_id.to_string(),
             example_many_to_manys: examples_many_to_many_dtos,
             created_at: example_with_relation.created_at.to_string(),
             updated_at: example_with_relation.updated_at.to_string()
         }
+    }
+
+    pub fn dto_to_create_active_model(dto: ExampleWithRelationCreateDto) -> (ExampleWithRelationActiveModel, Vec<ExampleManyToManyActiveModel>) {
+        let example_many_to_many_active_models = dto.example_many_to_manys.unwrap().iter().map(|dto| ExampleManyToManyTransformer::dto_to_create_active_model(dto.clone())).collect();
+        
+        let example_with_relation_active_model = ExampleWithRelationActiveModel {
+            id: NotSet,
+            example_id: Set(Uuid::parse_str(&dto.example_id.unwrap()).unwrap()),
+            created_at: NotSet,
+            updated_at: NotSet
+        };
+
+        (example_with_relation_active_model, example_many_to_many_active_models)
+
     }
 }
