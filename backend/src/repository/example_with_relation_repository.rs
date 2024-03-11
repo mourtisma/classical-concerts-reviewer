@@ -83,7 +83,8 @@ impl<'a> ExampleWithRelationRepository<'a> {
                 }
                 ExampleSeaOrmWithRelationExampleManyToMany::insert_many(associative_records).exec(txn).await?;
                 
-                Ok(example_with_relation_entity_id)
+                let new_entity = &ExampleSeaOrmWithRelation::find_by_id(example_with_relation_entity_id).find_with_related(ExampleManyToMany).all(txn).await.unwrap()[0];
+                Ok(new_entity.clone())
 
                 
             })
@@ -98,8 +99,7 @@ impl<'a> ExampleWithRelationRepository<'a> {
                     sea_orm_transaction_error: Some(txn_error),
                 })
             })
-        } else if let Ok(new_entity_id) = insert_result {
-            let new_entity = &ExampleSeaOrmWithRelation::find_by_id(new_entity_id).find_with_related(ExampleManyToMany).all(self.connection).await.unwrap()[0];
+        } else if let Ok(new_entity) = insert_result {
             Ok(ExampleWithRelationTransformer::entity_to_get_dto(new_entity.clone()))
         } else {
             Err(RepositoryError {
