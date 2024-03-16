@@ -76,12 +76,12 @@ impl<'a> ExampleWithRelationService<'a> {
         }
     }
 
-    /*pub async fn delete(&mut self, id: &'a str) -> Result<(), Box<dyn ApiError<'a> + 'a>> where <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<Uuid> {
+    pub async fn delete(&mut self, id: &'a str) -> Result<(), Box<dyn ApiError<'a> + 'a>> {
         let delete_result = self.repository.delete(id).await;
 
         match delete_result {
             Err(rep_err) => Err(to_api_error(rep_err)),
             Ok(()) => Ok(())
         }
-    } */
+    }
 }

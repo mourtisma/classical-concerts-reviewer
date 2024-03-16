@@ -86,9 +86,9 @@ async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, exam
 
 }
 
-/*#[delete("/<id>")]
+#[delete("/<id>")]
 async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Status, (Status, Json<ErrorResult<'a>>)> {
-    let mut service = get_example_service(connection);
+    let mut service = get_service(connection);
     
     match service.delete(id).await {
         Ok(_) => Ok(Status::NoContent),
@@ -97,10 +97,10 @@ async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
         }
     }
 
-} */
+} 
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource with relations", |rocket| async {
-        rocket.mount("/examples-with-relations", routes![list, create, update])
+        rocket.mount("/examples-with-relations", routes![list, create, update, delete])
     })
 }

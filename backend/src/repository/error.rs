@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use sea_orm::{DbErr, TransactionError};
 
 pub enum RepositoryErrorType {
@@ -14,5 +16,4 @@ pub struct RepositoryError<'a> {
     pub error_type: RepositoryErrorType,
     pub message: Option<&'a str>,
     pub orm_error: Option<ORMError>
-
 }

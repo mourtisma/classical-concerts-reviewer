@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, vec};
 
-use sea_orm::{sea_query::{expr, BinOper, Expr, SimpleExpr, Table}, ActiveModelBehavior, ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, SelectColumns, Set, SqlErr, TransactionTrait, TryIntoModel};
+use sea_orm::{sea_query::{expr, BinOper, Expr, SimpleExpr, Table}, ActiveModelBehavior, ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, DeleteResult, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, RuntimeErr, SelectColumns, Set, SqlErr, TransactionError, TransactionTrait, TryIntoModel};
 use uuid::Uuid;
 use crate::{dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, model::{example_many_to_many, example_sea_orm_with_relation_example_many_to_many, prelude::*}, transformer::{example_with_relation_transformer::ExampleWithRelationTransformer, sea_orm_transformer::SeaOrmTransformer}};
 use super::{error::{ORMError, RepositoryError, RepositoryErrorType}, list_options::ListOptions};
@@ -189,17 +189,40 @@ impl<'a> ExampleWithRelationRepository<'a> {
         }
     } 
 
-   /*pub async fn delete(&mut self, item_id: &'a str) -> Result<(), RepositoryError<'a>> where <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<Uuid> {
-        let delete_result = SeaOrmModel::delete_by_id(Uuid::parse_str(item_id).unwrap()).exec(self.connection).await;
+   pub async fn delete(&mut self, item_id: &'a str) -> Result<(), RepositoryError<'a>> {
+    let owned_item_id = item_id.to_owned();
+    let txn_delete_result = self.connection.transaction::<_, Option<u64>, DbErr>(|txn| {
+        Box::pin(async move {
+            let removed_examples_many_to_many = ExampleSeaOrmWithRelationExampleManyToMany::find().filter(Expr::col(example_sea_orm_with_relation_example_many_to_many::Column::ExampleSeaOrmWithRelationId).eq(Uuid::parse_str(&owned_item_id).unwrap())).all(txn).await?;
+            
+            let removed_examples_many_to_many_ids: Vec<Uuid> = removed_examples_many_to_many.iter().map(|e| e.example_many_to_many_id).collect();
+            ExampleSeaOrmWithRelationExampleManyToMany::delete_many().filter(Expr::col(example_sea_orm_with_relation_example_many_to_many::Column::ExampleManyToManyId).is_in(removed_examples_many_to_many_ids.clone())).exec(txn).await?;
+            
+            // Delete the related entities which need to be related
+            ExampleManyToMany::delete_many().filter(Expr::col(example_many_to_many::Column::Id).is_in(removed_examples_many_to_many_ids)).exec(txn).await?;    
 
-        if let Ok(res) = delete_result {
-            if res.rows_affected > 0 {
-                Ok(())
+            let delete_result = ExampleSeaOrmWithRelation::delete_by_id(Uuid::parse_str(&owned_item_id).unwrap()).exec(txn).await;
+
+            if let Ok(res) = delete_result {
+                Ok(Some(res.rows_affected))
             } else {
-                Err(RepositoryError {
+                Ok(None)
+            }
+    })
+    }).await;
+        
+        if let Ok(rows_affected) = txn_delete_result {
+            if let Some(ra) = rows_affected {
+                if ra > 0 { Ok(()) } else {Err(RepositoryError {
                     error_type: RepositoryErrorType::NotFound,
                         message: None,
                         orm_error: None
+                })}
+            } else {
+                Err(RepositoryError {
+                    error_type: RepositoryErrorType::Unknown,
+                    message: Some("An unknow error occurred"),
+                    orm_error: None
                 })
             }
         } else {
@@ -210,7 +233,7 @@ impl<'a> ExampleWithRelationRepository<'a> {
             })
         } 
         
-    }*/
+    }
 
       
 
