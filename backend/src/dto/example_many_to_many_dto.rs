@@ -17,3 +17,12 @@ pub struct ExampleManyToManyCreateDto {
     #[validate(required)]
     pub name: Option<String>
 }
+
+#[derive(Clone, Serialize, Deserialize, Validate)]
+#[serde(crate = "rocket::serde")]
+pub struct ExampleManyToManyUpdateDto {
+    pub id: Option<String>,
+    
+    #[validate(required)]
+    pub name: Option<String>
+}

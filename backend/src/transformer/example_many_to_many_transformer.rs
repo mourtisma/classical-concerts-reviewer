@@ -1,6 +1,8 @@
+use chrono::Utc;
 use sea_orm::{ActiveValue::NotSet, Set};
+use uuid::Uuid;
 
-use crate::{dto::example_many_to_many_dto::{ExampleManyToManyCreateDto, ExampleManyToManyGetDto}, model::prelude::{ExampleManyToManyModel, ExampleManyToManyActiveModel}};
+use crate::{dto::example_many_to_many_dto::{ExampleManyToManyCreateDto, ExampleManyToManyGetDto, ExampleManyToManyUpdateDto}, model::prelude::{ExampleManyToManyActiveModel, ExampleManyToManyModel}};
 
 pub struct ExampleManyToManyTransformer {}
 
@@ -20,6 +22,20 @@ impl ExampleManyToManyTransformer {
             name: Set(dto.name.unwrap()),
             created_at: NotSet,
             updated_at: NotSet
+        }
+    }
+
+    pub fn dto_to_update_active_model(dto: ExampleManyToManyUpdateDto) -> ExampleManyToManyActiveModel {
+        let id = match dto.id {
+            Some(x) => Set(Uuid::parse_str(&x).unwrap()),
+            _ => NotSet
+        };
+
+        ExampleManyToManyActiveModel {
+            id,
+            name: Set(dto.name.unwrap()),
+            created_at: NotSet,
+            updated_at: Set(Utc::now().naive_utc())
         }
     }
 }

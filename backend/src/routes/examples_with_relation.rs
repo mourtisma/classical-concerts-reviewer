@@ -6,7 +6,7 @@ use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
 use sea_orm::DatabaseConnection;
 
 use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto};
-use crate::dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto};
+use crate::dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto};
 use crate::model::prelude::{ExampleActiveModel, ExampleSeaOrm};
 use crate::repository::base_seaorm_repository::BaseSeaOrmRepository;
 use crate::repository::example_with_relation_repository::ExampleWithRelationRepository;
@@ -73,9 +73,9 @@ async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<Exa
 
 }
 
-/*#[put("/<id>", data="<example>")]
-async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, example: Json<ExampleUpdateDto>) -> Result<Json<SuccessUpdateResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
-    let mut service = get_example_service(connection);
+#[put("/<id>", data="<example>")]
+async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, example: Json<ExampleWithRelationUpdateDto>) -> Result<Json<SuccessUpdateResult<ExampleWithRelationGetDto>>, (Status, Json<ErrorResult<'a>>)> {
+    let mut service = get_service(connection);
     
     match service.update(id, example.0).await {
         Ok(res) => Ok(Json(res)),
@@ -86,7 +86,7 @@ async fn update<'a>(connection: &'a State<DatabaseConnection>, id: &'a str, exam
 
 }
 
-#[delete("/<id>")]
+/*#[delete("/<id>")]
 async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Status, (Status, Json<ErrorResult<'a>>)> {
     let mut service = get_example_service(connection);
     
@@ -101,6 +101,6 @@ async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource with relations", |rocket| async {
-        rocket.mount("/examples-with-relations", routes![list, create])
+        rocket.mount("/examples-with-relations", routes![list, create, update])
     })
 }
