@@ -25,7 +25,7 @@ impl<'a> ExampleWithRelationService<'a> {
         
     }
 
-    /* pub async fn get_one(&mut self, example_id: &'a str) -> Result<SuccessGetOneResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <<SeaOrmModel as sea_orm::EntityTrait>::PrimaryKey as sea_orm::PrimaryKeyTrait>::ValueType: From<Uuid> {
+    pub async fn get_one(&mut self, example_id: &'a str) -> Result<SuccessGetOneResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
         let repository_result = self.repository.get_one(example_id).await;
         
         if let Ok(item) = repository_result {
@@ -39,7 +39,7 @@ impl<'a> ExampleWithRelationService<'a> {
             return Err(Box::new(UnknownError::new(None, None)))
         }
         
-    } */
+    }
 
     pub async fn create(&mut self, data: ExampleWithRelationCreateDto) -> Result<SuccessCreateResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
         let validation_result = data.validate();

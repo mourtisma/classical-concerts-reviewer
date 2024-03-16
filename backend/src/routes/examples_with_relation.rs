@@ -46,9 +46,9 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
     
 }
 
-/* #[get("/<id>")]
-async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Json<SuccessGetOneResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
-    let mut service = get_example_service(connection);
+#[get("/<id>")]
+async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> Result<Json<SuccessGetOneResult<ExampleWithRelationGetDto>>, (Status, Json<ErrorResult<'a>>)> {
+    let mut service = get_service(connection);
     
     match service.get_one(id).await {
         Ok(res) => Ok(Json(res)),
@@ -57,7 +57,7 @@ async fn detail<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
         }
     }
 
-} */
+}
 
 #[post("/", data="<example>")]
 async fn create<'a>(connection: &'a State<DatabaseConnection>, example: Json<ExampleWithRelationCreateDto>) -> Result<(Status, Json<SuccessCreateResult<ExampleWithRelationGetDto>>), (Status, Json<ErrorResult<'a>>)> {
@@ -101,6 +101,6 @@ async fn delete<'a>(connection: &'a State<DatabaseConnection>, id: &'a str) -> R
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Example resource with relations", |rocket| async {
-        rocket.mount("/examples-with-relations", routes![list, create, update, delete])
+        rocket.mount("/examples-with-relations", routes![list, detail, create, update, delete])
     })
 }
