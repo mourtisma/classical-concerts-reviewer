@@ -29,9 +29,11 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
         
         match repository_result {
             Err(rep_error) => Err(to_api_error(rep_error)),
-            Ok(items) => Ok(SuccessGetManyResult {
+            Ok(res) => Ok(SuccessGetManyResult {
                 status: ResponseStatus::Success,
-                items
+                items: res.items,
+                total_count: res.total_count,
+                num_pages: res.num_pages
             })
         }
         

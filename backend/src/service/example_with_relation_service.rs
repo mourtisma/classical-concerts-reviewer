@@ -1,6 +1,6 @@
 use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveModel};
 use uuid::Uuid;
-use validator::Validate;
+use validator::{HasLen, Validate};
 
 use crate::{dto::{example_dto::ExampleOrderDto, example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, list_options_dto::ListOptionsDto}, repository::{base_seaorm_repository::BaseSeaOrmRepository, example_with_relation_repository::ExampleWithRelationRepository}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
@@ -19,7 +19,9 @@ impl<'a> ExampleWithRelationService<'a> {
             Err(rep_error) => Err(to_api_error(rep_error)),
             Ok(items) => Ok(SuccessGetManyResult {
                 status: ResponseStatus::Success,
-                items
+                items: items.clone(),
+                total_count: items.length(),
+                num_pages: None
             })
         }
         

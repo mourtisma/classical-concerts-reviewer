@@ -4,7 +4,7 @@ use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseC
 use uuid::Uuid;
 use validator::Validate;
 use crate::{dto::list_options_dto::ListOptionsDto, model::{example_sea_orm, prelude::*, sea_orm_search_params}, transformer::sea_orm_transformer::SeaOrmTransformer};
-use super::error::{ORMError, RepositoryError, RepositoryErrorType};
+use super::{error::{ORMError, RepositoryError, RepositoryErrorType}, repository_result::RepositoryResult};
 
 pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
@@ -24,7 +24,7 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
         Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, SeaOrmModel, AM>,
         AM: ActiveModelBehavior + std::marker::Send, {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto<EntityOrderDto>) -> Result<Vec<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
+    pub async fn get_many(&mut self, options: ListOptionsDto<EntityOrderDto>) -> Result<RepositoryResult<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
         let sea_orm_search_params = Transformer::list_options_to_search_params(options);
 
         let mut selector = SeaOrmModel::find();
@@ -34,13 +34,19 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
         }
 
         let get_many_result: Result<Vec<<SeaOrmModel as sea_orm::EntityTrait>::Model>, DbErr>;
+        let mut total_count: u64 = 0;
+        let mut num_pages: Option<u64> = None;
 
         if let Some(page_size) = sea_orm_search_params.page_size {
             let paginator = selector.into_model().paginate(self.connection, page_size);
-        
+            let num_items_and_pages = paginator.num_items_and_pages().await.unwrap();
+            
             get_many_result = paginator.fetch_page(sea_orm_search_params.page_number.unwrap_or(1) - 1).await;
+            total_count = num_items_and_pages.number_of_items;
+            num_pages = Some(num_items_and_pages.number_of_pages);
         } else {
-            get_many_result = selector.all(self.connection).await;
+            get_many_result = selector.clone().all(self.connection).await;
+            total_count = selector.count(self.connection).await.unwrap()
         }
         
         
@@ -56,8 +62,17 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
             })
         } else {
             match get_many_result.ok() {
-                Some(items_list) => Ok(items_list.iter().map(|it| Transformer::entity_to_get_dto(it.clone())).collect()),
-                None => Ok(vec![]),    
+                Some(items_list) => Ok(RepositoryResult::<GetModelDto> {
+                    items: items_list.iter().map(|it| Transformer::entity_to_get_dto(it.clone())).collect(),
+                    total_count,
+                    num_pages
+                }),
+                None => Ok(RepositoryResult::<GetModelDto> {
+                    items: vec![],
+                    total_count,
+                    num_pages
+
+                }),    
             }
         }
     }
