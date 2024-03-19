@@ -1,12 +1,16 @@
+use std::collections::HashMap;
+
 use chrono::Utc;
-use sea_orm::{prelude::*, ActiveValue::NotSet, Set};
+use sea_orm::{prelude::*, ActiveValue::NotSet, Order, Set};
 use uuid::Uuid;
 
-use crate::{dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto}, model::{example_sea_orm, prelude::{ExampleActiveModel, ExampleSeaOrm, ExampleSeaOrmModel}}};
+use crate::{dto::{example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto}, list_options_dto::{ListOptionsDto, OrderDto, OrderType}}, model::{example_sea_orm, prelude::{ExampleActiveModel, ExampleSeaOrm, ExampleSeaOrmModel}, sea_orm_search_params::SeaOrmSearchParams}};
 
-use super::sea_orm_transformer::SeaOrmTransformer;
+use super::{helpers::order_dto_to_sea_orm, sea_orm_transformer::SeaOrmTransformer};
 
 pub struct ExampleTransformer {}
+
+
 
 impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleSeaOrm, ExampleActiveModel>
  for ExampleTransformer {
@@ -43,4 +47,45 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
             created_at: active_model.created_at.to_string()
         }
     }
+
+    fn col_names_to_cols() ->  HashMap<String, <example_sea_orm::Entity as sea_orm::EntityTrait>::Column> {
+        let mut cols_map = HashMap::new();
+        cols_map.insert("id".to_owned(), example_sea_orm::Column::Id);
+        cols_map.insert("name".to_owned(), example_sea_orm::Column::Name);
+        cols_map.insert("created_at".to_owned(), example_sea_orm::Column::CreatedAt);
+        cols_map.insert("updated_at".to_owned(), example_sea_orm::Column::UpdatedAt);
+
+        cols_map
+    }
+
+    fn build_order_vec(list_options_order: Option<Vec<OrderDto>>) -> Option<Vec<(<example_sea_orm::Entity as sea_orm::EntityTrait>::Column, Order)>> {
+        if let Some(order_options) = list_options_order {
+            let mut order_vec = vec![];
+
+            let cols_map = ExampleTransformer::col_names_to_cols();
+    
+            for order_dto in order_options.iter() {
+                let sea_orm_col = cols_map.get(&order_dto.field).unwrap(); 
+                let sea_orm_order = order_dto_to_sea_orm(order_dto.direction.clone());
+    
+                order_vec.push((*sea_orm_col, sea_orm_order));
+            }
+    
+            Some(order_vec)
+        } else {
+            None
+        }
+        
+
+    }
+    
+    fn list_options_to_search_params(list_options: ListOptionsDto) -> SeaOrmSearchParams<<ExampleSeaOrm as EntityTrait>::Column> {
+        SeaOrmSearchParams::<example_sea_orm::Column> {
+            order_by: ExampleTransformer::build_order_vec(list_options.order_by),
+            page_number: list_options.page,
+            page_size: list_options.limit,
+        }
+    }
+
+
 }

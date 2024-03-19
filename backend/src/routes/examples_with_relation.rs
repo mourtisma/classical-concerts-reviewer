@@ -7,10 +7,10 @@ use sea_orm::DatabaseConnection;
 
 use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto};
 use crate::dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto};
+use crate::dto::list_options_dto::ListOptionsDto;
 use crate::model::prelude::{ExampleActiveModel, ExampleSeaOrm};
 use crate::repository::base_seaorm_repository::BaseSeaOrmRepository;
 use crate::repository::example_with_relation_repository::ExampleWithRelationRepository;
-use crate::repository::list_options::ListOptions;
 
 use crate::service::error::{ErrorResult, ApiError};
 use crate::service::base_service::BaseService;
@@ -35,7 +35,7 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
     let mut service = get_service(connection);
     
 
-    let examples_result = service.get_many(ListOptions{order_by: None, page: None,limit: None}).await;
+    let examples_result = service.get_many(ListOptionsDto{order_by: None, page: None,limit: None}).await;
     
     match examples_result {
         Ok(examples) => Ok(Json(examples)),

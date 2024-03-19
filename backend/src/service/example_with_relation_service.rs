@@ -2,7 +2,7 @@ use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveMode
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{dto::example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, repository::{base_seaorm_repository::BaseSeaOrmRepository, example_with_relation_repository::ExampleWithRelationRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{dto::{example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, list_options_dto::ListOptionsDto}, repository::{base_seaorm_repository::BaseSeaOrmRepository, example_with_relation_repository::ExampleWithRelationRepository}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
@@ -12,7 +12,7 @@ pub struct ExampleWithRelationService<'a> {
 
 impl<'a> ExampleWithRelationService<'a> {
 
-    pub async fn get_many(&mut self, options: ListOptions) -> Result<SuccessGetManyResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
+    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<SuccessGetManyResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
         let repository_result = self.repository.get_many(options).await;
         
         match repository_result {

@@ -1,9 +1,9 @@
 use std::{marker::PhantomData, vec};
 
-use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, SqlErr, TryIntoModel};
+use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbBackend, DbErr, EntityTrait, IntoActiveModel, PaginatorTrait, QueryOrder, QueryTrait, SqlErr, TryIntoModel};
 use uuid::Uuid;
-use crate::{model::prelude::*, transformer::sea_orm_transformer::SeaOrmTransformer};
-use super::{error::{ORMError, RepositoryError, RepositoryErrorType}, list_options::ListOptions};
+use crate::{dto::list_options_dto::ListOptionsDto, model::{example_sea_orm, prelude::*, sea_orm_search_params}, transformer::sea_orm_transformer::SeaOrmTransformer};
+use super::error::{ORMError, RepositoryError, RepositoryErrorType};
 
 pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
@@ -22,9 +22,26 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
         Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, SeaOrmModel, AM>,
         AM: ActiveModelBehavior + std::marker::Send, {
 
-    pub async fn get_many(&mut self, options: ListOptions) -> Result<Vec<GetModelDto>, RepositoryError<'a>> {
+    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<Vec<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
+        let sea_orm_search_params = Transformer::list_options_to_search_params(options);
+
+        let mut selector = SeaOrmModel::find();
+        for ob in sea_orm_search_params.order_by.unwrap_or(vec![]) {
+            let (ord, col) = ob.clone();
+            selector = selector.clone().order_by(ord, col);
+        }
+
+        let get_many_result: Result<Vec<<SeaOrmModel as sea_orm::EntityTrait>::Model>, DbErr>;
+
+        if let Some(page_size) = sea_orm_search_params.page_size {
+            let paginator = selector.into_model().paginate(self.connection, page_size);
         
-        let get_many_result = SeaOrmModel::find().all(self.connection).await;
+            get_many_result = paginator.fetch_page(sea_orm_search_params.page_number.unwrap_or(1) - 1).await;
+        } else {
+            get_many_result = selector.all(self.connection).await;
+        }
+        
+        
         
         if get_many_result.is_err() {
             Err(RepositoryError {

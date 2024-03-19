@@ -2,7 +2,7 @@ use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveMode
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{repository::{base_seaorm_repository::BaseSeaOrmRepository, list_options::ListOptions}, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{dto::list_options_dto::ListOptionsDto, repository::base_seaorm_repository::BaseSeaOrmRepository, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
@@ -18,7 +18,7 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, 
     Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, SeaOrmModel, AM>,
     AM: ActiveModelBehavior + std::marker::Send {
 
-    pub async fn get_many(&mut self, options: ListOptions) -> Result<SuccessGetManyResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> {
+    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<SuccessGetManyResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
         let repository_result = self.repository.get_many(options).await;
         
         match repository_result {
