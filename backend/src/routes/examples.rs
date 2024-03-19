@@ -1,4 +1,4 @@
-use crate::dto::list_options_dto::{OrderDto, OrderType};
+use crate::dto::list_options_dto::OrderType;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
@@ -7,7 +7,7 @@ use rocket::State;
 use rocket::{fairing::AdHoc, routes, get, post, put, delete, serde::json::Json};
 use sea_orm::DatabaseConnection;
 
-use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto};
+use crate::dto::example_dto::{ExampleCreateDto, ExampleGetDto, ExampleOrderDto, ExampleUpdateDto};
 use crate::dto::list_options_dto::ListOptionsDto;
 use crate::model::prelude::{ExampleActiveModel, ExampleSeaOrm};
 use crate::repository::base_seaorm_repository::BaseSeaOrmRepository;
@@ -17,7 +17,7 @@ use crate::service::base_service::BaseService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
 use crate::transformer::example_transformer::ExampleTransformer;
 
-type ExampleService<'a> = BaseService<'a, ExampleSeaOrm, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleTransformer, ExampleActiveModel>;
+type ExampleService<'a> = BaseService<'a, ExampleSeaOrm, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleOrderDto, ExampleTransformer, ExampleActiveModel>;
 
 fn get_example_service<'a>(connection: &'a State<DatabaseConnection>) -> ExampleService<'a> {
     let repository = BaseSeaOrmRepository {
@@ -26,6 +26,7 @@ fn get_example_service<'a>(connection: &'a State<DatabaseConnection>) -> Example
     _phantom_get: PhantomData,
     _phantom_create: PhantomData::<ExampleCreateDto>,
     _phantom_update: PhantomData::<ExampleUpdateDto>,
+    _phantom_order: PhantomData::<ExampleOrderDto>,
     _phantom_transformer: PhantomData::<ExampleTransformer>,
     _phantom_active_model: PhantomData::<ExampleActiveModel>
     };
@@ -36,7 +37,7 @@ fn get_example_service<'a>(connection: &'a State<DatabaseConnection>) -> Example
 }
 
 #[get("/?<order_by>&<page>&<limit>")]
-async fn list<'a>(connection: &'a State<DatabaseConnection>, order_by: Option<Vec<OrderDto>>, page: Option<u64>, limit: Option<u64>) -> Result<Json<SuccessGetManyResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
+async fn list<'a>(connection: &'a State<DatabaseConnection>, order_by: Option<Vec<ExampleOrderDto>>, page: Option<u64>, limit: Option<u64>) -> Result<Json<SuccessGetManyResult<ExampleGetDto>>, (Status, Json<ErrorResult<'a>>)> {
     let mut service = get_example_service(connection);
     
 

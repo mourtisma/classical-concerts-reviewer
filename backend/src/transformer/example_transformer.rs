@@ -4,7 +4,7 @@ use chrono::Utc;
 use sea_orm::{prelude::*, ActiveValue::NotSet, Order, Set};
 use uuid::Uuid;
 
-use crate::{dto::{example_dto::{ExampleCreateDto, ExampleGetDto, ExampleUpdateDto}, list_options_dto::{ListOptionsDto, OrderDto, OrderType}}, model::{example_sea_orm, prelude::{ExampleActiveModel, ExampleSeaOrm, ExampleSeaOrmModel}, sea_orm_search_params::SeaOrmSearchParams}};
+use crate::{dto::{example_dto::{ExampleCreateDto, ExampleGetDto, ExampleOrderDto, ExampleUpdateDto}, list_options_dto::{ListOptionsDto, OrderType}}, model::{example_sea_orm, prelude::{ExampleActiveModel, ExampleSeaOrm, ExampleSeaOrmModel}, sea_orm_search_params::SeaOrmSearchParams}};
 
 use super::{helpers::order_dto_to_sea_orm, sea_orm_transformer::SeaOrmTransformer};
 
@@ -12,7 +12,7 @@ pub struct ExampleTransformer {}
 
 
 
-impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleSeaOrm, ExampleActiveModel>
+impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleOrderDto, ExampleSeaOrm, ExampleActiveModel>
  for ExampleTransformer {
     fn entity_to_get_dto(entity: ExampleSeaOrmModel) -> ExampleGetDto {
         ExampleGetDto {
@@ -58,7 +58,7 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
         cols_map
     }
 
-    fn build_order_vec(list_options_order: Option<Vec<OrderDto>>) -> Option<Vec<(<example_sea_orm::Entity as sea_orm::EntityTrait>::Column, Order)>> {
+    fn build_order_vec(list_options_order: Option<Vec<ExampleOrderDto>>) -> Option<Vec<(<example_sea_orm::Entity as sea_orm::EntityTrait>::Column, Order)>> {
         if let Some(order_options) = list_options_order {
             let mut order_vec = vec![];
 
@@ -79,7 +79,7 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
 
     }
     
-    fn list_options_to_search_params(list_options: ListOptionsDto) -> SeaOrmSearchParams<<ExampleSeaOrm as EntityTrait>::Column> {
+    fn list_options_to_search_params(list_options: ListOptionsDto<ExampleOrderDto>) -> SeaOrmSearchParams<<ExampleSeaOrm as EntityTrait>::Column> {
         SeaOrmSearchParams::<example_sea_orm::Column> {
             order_by: ExampleTransformer::build_order_vec(list_options.order_by),
             page_number: list_options.page,

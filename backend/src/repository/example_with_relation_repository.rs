@@ -2,7 +2,7 @@ use std::{marker::PhantomData, vec};
 
 use sea_orm::{sea_query::{expr, BinOper, Expr, SimpleExpr, Table}, ActiveModelBehavior, ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, DeleteResult, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, RuntimeErr, SelectColumns, Set, SqlErr, TransactionError, TransactionTrait, TryIntoModel};
 use uuid::Uuid;
-use crate::{dto::{example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, list_options_dto::ListOptionsDto}, model::{example_many_to_many, example_sea_orm_with_relation_example_many_to_many, prelude::*}, transformer::{example_with_relation_transformer::ExampleWithRelationTransformer, sea_orm_transformer::SeaOrmTransformer}};
+use crate::{dto::{example_dto::ExampleOrderDto, example_with_relation_dto::{ExampleWithRelationCreateDto, ExampleWithRelationGetDto, ExampleWithRelationUpdateDto}, list_options_dto::ListOptionsDto}, model::{example_many_to_many, example_sea_orm_with_relation_example_many_to_many, prelude::*}, transformer::{example_with_relation_transformer::ExampleWithRelationTransformer, sea_orm_transformer::SeaOrmTransformer}};
 use super::{error::{ORMError, RepositoryError, RepositoryErrorType}};
 
 pub struct ExampleWithRelationRepository<'a> {
@@ -11,7 +11,7 @@ pub struct ExampleWithRelationRepository<'a> {
 
 impl<'a> ExampleWithRelationRepository<'a> {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<Vec<ExampleWithRelationGetDto>, RepositoryError<'a>> {
+    pub async fn get_many(&mut self, options: ListOptionsDto<ExampleOrderDto>) -> Result<Vec<ExampleWithRelationGetDto>, RepositoryError<'a>> {
         
         let get_many_result = ExampleSeaOrmWithRelation::find().find_with_related(ExampleManyToMany).all(self.connection).await;
         

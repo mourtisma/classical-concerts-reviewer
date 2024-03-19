@@ -2,27 +2,29 @@ use std::{marker::PhantomData, vec};
 
 use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbBackend, DbErr, EntityTrait, IntoActiveModel, PaginatorTrait, QueryOrder, QueryTrait, SqlErr, TryIntoModel};
 use uuid::Uuid;
+use validator::Validate;
 use crate::{dto::list_options_dto::ListOptionsDto, model::{example_sea_orm, prelude::*, sea_orm_search_params}, transformer::sea_orm_transformer::SeaOrmTransformer};
 use super::error::{ORMError, RepositoryError, RepositoryErrorType};
 
-pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModel, Transformer, AM> {
+pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> {
     pub connection: &'a DatabaseConnection,
     pub _phantom_sea_orm: PhantomData<SeaOrmModel>,
     pub _phantom_get: PhantomData<GetModelDto>,
     pub _phantom_create: PhantomData<CreateModelDto>,
-    pub _phantom_update: PhantomData<UpdateModel>,
+    pub _phantom_update: PhantomData<UpdateModelDto>,
+    pub _phantom_order: PhantomData<EntityOrderDto>,
     pub _phantom_transformer: PhantomData<Transformer>,
     pub _phantom_active_model: PhantomData<AM>
 }
 
-
-impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> 
-    BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> where 
+impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> 
+    BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> where 
         SeaOrmModel: EntityTrait,
-        Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, SeaOrmModel, AM>,
+        EntityOrderDto: Validate,
+        Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, SeaOrmModel, AM>,
         AM: ActiveModelBehavior + std::marker::Send, {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<Vec<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
+    pub async fn get_many(&mut self, options: ListOptionsDto<EntityOrderDto>) -> Result<Vec<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
         let sea_orm_search_params = Transformer::list_options_to_search_params(options);
 
         let mut selector = SeaOrmModel::find();

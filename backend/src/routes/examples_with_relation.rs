@@ -18,8 +18,6 @@ use crate::service::example_with_relation_service::ExampleWithRelationService;
 use crate::service::result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult};
 use crate::transformer::example_transformer::ExampleTransformer;
 
-type ExampleService<'a> = BaseService<'a, ExampleSeaOrm, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto, ExampleTransformer, ExampleActiveModel>;
-
 fn get_service<'a>(connection: &'a State<DatabaseConnection>) -> ExampleWithRelationService<'a> {
     let repository = ExampleWithRelationRepository {
         connection,

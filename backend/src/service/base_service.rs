@@ -6,19 +6,25 @@ use crate::{dto::list_options_dto::ListOptionsDto, repository::base_seaorm_repos
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
-pub struct BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> {
-    pub repository: BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>
+pub struct BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> {
+    pub repository: BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM>
 }
 
-impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM> 
-    BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, Transformer, AM>  where 
+impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> 
+    BaseService<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM>  where 
     SeaOrmModel: EntityTrait,
     CreateModelDto: Validate,
     UpdateModelDto: Validate,
-    Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, SeaOrmModel, AM>,
+    EntityOrderDto: Validate,
+    Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, SeaOrmModel, AM>,
     AM: ActiveModelBehavior + std::marker::Send {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto) -> Result<SuccessGetManyResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
+    pub async fn get_many(&mut self, options: ListOptionsDto<EntityOrderDto>) -> Result<SuccessGetManyResult<GetModelDto>, Box<dyn ApiError<'a> + 'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
+        let validation_result = options.validate();
+        if validation_result.is_err() {
+            return Err(Box::new(ApiValidationError::new(None, validation_result.err())))
+        }
+        
         let repository_result = self.repository.get_many(options).await;
         
         match repository_result {
