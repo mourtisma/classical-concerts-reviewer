@@ -2,7 +2,7 @@ use sea_orm::{ActiveModelBehavior, ActiveModelTrait, EntityTrait, IntoActiveMode
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{dto::list_options_dto::ListOptionsDto, repository::base_seaorm_repository::BaseSeaOrmRepository, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{dto::{list_options_dto::ListOptionsDto, order_dto::OrderDto}, repository::base_seaorm_repository::BaseSeaOrmRepository, status::ResponseStatus, transformer::sea_orm_transformer::SeaOrmTransformer};
 
 use super::{error::{to_api_error, ApiError, ApiValidationError, NotFoundError, UnknownError}, result::{SuccessCreateResult, SuccessGetManyResult, SuccessGetOneResult, SuccessUpdateResult}};
 
@@ -15,7 +15,7 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
     SeaOrmModel: EntityTrait,
     CreateModelDto: Validate,
     UpdateModelDto: Validate,
-    EntityOrderDto: Validate,
+    EntityOrderDto: OrderDto,
     Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, SeaOrmModel, AM>,
     AM: ActiveModelBehavior + std::marker::Send {
 

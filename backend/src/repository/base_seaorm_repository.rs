@@ -3,7 +3,7 @@ use std::{marker::PhantomData, vec};
 use sea_orm::{sea_query::Table, ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DbBackend, DbErr, EntityTrait, IntoActiveModel, PaginatorTrait, QueryOrder, QueryTrait, SqlErr, TryIntoModel};
 use uuid::Uuid;
 use validator::Validate;
-use crate::{dto::list_options_dto::ListOptionsDto, model::{example_sea_orm, prelude::*, sea_orm_search_params}, transformer::sea_orm_transformer::SeaOrmTransformer};
+use crate::{dto::{list_options_dto::ListOptionsDto, order_dto::OrderDto}, model::{example_sea_orm, prelude::*, sea_orm_search_params}, transformer::sea_orm_transformer::SeaOrmTransformer};
 use super::{error::{ORMError, RepositoryError, RepositoryErrorType}, repository_result::RepositoryResult};
 
 pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> {
@@ -20,12 +20,12 @@ pub struct BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, Up
 impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> 
     BaseSeaOrmRepository<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, Transformer, AM> where 
         SeaOrmModel: EntityTrait,
-        EntityOrderDto: Validate,
+        EntityOrderDto: OrderDto,
         Transformer: SeaOrmTransformer<'a, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDto, SeaOrmModel, AM>,
         AM: ActiveModelBehavior + std::marker::Send, {
 
     pub async fn get_many(&mut self, options: ListOptionsDto<EntityOrderDto>) -> Result<RepositoryResult<GetModelDto>, RepositoryError<'a>> where <SeaOrmModel as sea_orm::EntityTrait>::Model: Sync {
-        let sea_orm_search_params = Transformer::list_options_to_search_params(options);
+        let sea_orm_search_params = Transformer::list_options_to_search_params::<Transformer>(options);
 
         let mut selector = SeaOrmModel::find();
         for ob in sea_orm_search_params.order_by.unwrap_or(vec![]) {

@@ -58,36 +58,6 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
         cols_map
     }
 
-    fn build_order_vec(list_options_order: Option<Vec<ExampleOrderDto>>) -> Option<Vec<(<example_sea_orm::Entity as sea_orm::EntityTrait>::Column, Order)>> {
-        if let Some(order_options) = list_options_order {
-            let mut order_vec = vec![];
-
-            let cols_map = ExampleTransformer::col_names_to_cols();
-    
-            for order_dto in order_options.iter() {
-                let sea_orm_col = cols_map.get(&order_dto.field).unwrap(); 
-                let sea_orm_order = order_dto_to_sea_orm(order_dto.direction.clone());
-    
-                order_vec.push((*sea_orm_col, sea_orm_order));
-            }
-    
-            Some(order_vec)
-        } else {
-            None
-        }
-        
-
-    }
-    
-    fn list_options_to_search_params(list_options: ListOptionsDto<ExampleOrderDto>) -> SeaOrmSearchParams<<ExampleSeaOrm as EntityTrait>::Column> {
-        SeaOrmSearchParams::<example_sea_orm::Column> {
-            order_by: ExampleTransformer::build_order_vec(list_options.order_by),
-            page_number: list_options.page,
-            page_size: list_options.limit,
-        }
-    }
-
-
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use rocket::form::FromForm;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
-use super::list_options_dto::OrderType;
+use super::{list_options_dto::OrderType, order_dto::OrderDto};
 
 #[derive(Clone, Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -35,10 +35,20 @@ fn validate_field(value: &String) -> Result<(), ValidationError> {
     }
 }
 
-#[derive(FromForm, Validate)]
+#[derive(FromForm, Validate, Clone)]
 pub struct ExampleOrderDto {
     #[validate(custom(function = "validate_field"))]
     pub field: String,
     #[validate(custom(function = "super::list_options_dto::validate_direction"))]
     pub direction: OrderType
+}
+
+impl OrderDto for ExampleOrderDto {
+    fn field(self) -> String {
+        self.field
+    }
+
+    fn direction(self) -> OrderType {
+        self.direction
+    }
 }
