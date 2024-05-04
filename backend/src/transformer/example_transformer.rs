@@ -89,3 +89,71 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
 
 
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_entity_to_get_dto() {
+        let entity = ExampleSeaOrmModel {
+            id: Uuid::new_v4(),
+            name: String::from("Example 1"),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc()
+        };
+
+        let get_dto = ExampleTransformer::entity_to_get_dto(entity.clone());
+        
+        assert_eq!(get_dto.id, entity.id.to_string());
+        assert_eq!(get_dto.name, entity.name);
+        assert_eq!(get_dto.created_at, entity.created_at.to_string());
+    }
+
+    #[test]
+    fn test_dto_to_create_active_model() {
+        let create_dto = ExampleCreateDto {
+            name: Some(String::from("Example 1"))
+        };
+
+        let create_active_model = ExampleTransformer::dto_to_create_active_model(create_dto.clone());
+        
+        assert_eq!(create_active_model.id, NotSet);
+        assert_eq!(create_active_model.name, Set(create_dto.name.unwrap()));
+        assert_eq!(create_active_model.created_at, NotSet);
+        assert_eq!(create_active_model.updated_at, NotSet);
+    }
+
+    #[test]
+    fn test_dto_to_update_active_model() {
+        let update_dto = ExampleUpdateDto {
+            name: Some(String::from("Example 1"))
+        };
+
+        let binding = Uuid::new_v4().to_string();
+        let id = binding.as_str();
+
+        let update_active_model = ExampleTransformer::dto_to_update_active_model(update_dto.clone(), id);
+        
+        assert_eq!(update_active_model.id, Set(Uuid::parse_str(id).unwrap()));
+        assert_eq!(update_active_model.name, Set(update_dto.name.unwrap()));
+        assert_eq!(update_active_model.created_at, NotSet);
+    }
+
+    #[test]
+    fn test_active_model_to_dto() {
+        let entity = ExampleSeaOrmModel {
+            id: Uuid::new_v4(),
+            name: String::from("Example 1"),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc()
+        };
+
+        let get_dto = ExampleTransformer::entity_to_get_dto(entity.clone());
+        
+        assert_eq!(get_dto.id, entity.id.to_string());
+        assert_eq!(get_dto.name, entity.name);
+        assert_eq!(get_dto.created_at, entity.created_at.to_string());
+    }
+}
