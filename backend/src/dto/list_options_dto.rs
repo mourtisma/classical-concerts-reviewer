@@ -18,7 +18,7 @@ pub enum OrderType {
     Desc
 }
 
-#[derive(Validate)]
+#[derive(Validate, Clone)]
 pub struct ListOptionsDto<EntityOrderDto> where EntityOrderDto: Validate {
     #[validate]
     pub order_by: Option<Vec<EntityOrderDto>>,

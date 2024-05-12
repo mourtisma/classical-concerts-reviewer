@@ -63,6 +63,8 @@ impl<'a> SeaOrmTransformer<'a, ExampleGetDto, ExampleCreateDto, ExampleUpdateDto
 #[cfg(test)]
 mod tests {
 
+    use rocket::form::validate::Len;
+
     use super::*;
 
     #[test]
@@ -125,5 +127,34 @@ mod tests {
         assert_eq!(get_dto.id, entity.id.to_string());
         assert_eq!(get_dto.name, entity.name);
         assert_eq!(get_dto.created_at, entity.created_at.to_string());
+    }
+
+    #[test]
+    fn test_list_options_to_search_params() {
+        let list_options =  ListOptionsDto {
+            order_by: Some(vec![
+                ExampleOrderDto {
+                    field: String::from("name"),
+                    direction: OrderType::Asc
+                },
+                ExampleOrderDto {
+                    field: String::from("created_at"),
+                    direction: OrderType::Desc
+                }
+                ]),
+                page: Some(1),
+                limit: Some(2)
+        };
+
+        let search_params = ExampleTransformer::list_options_to_search_params::<ExampleTransformer>(list_options.clone());
+
+        assert!(search_params.order_by.is_some());
+        assert_eq!(search_params.order_by.len(), 2);
+        
+        assert!(matches!(search_params.order_by.clone().unwrap()[0], (example_sea_orm::Column::Name, Order::Asc)));
+        assert!(matches!(search_params.order_by.clone().unwrap()[1], (example_sea_orm::Column::CreatedAt, Order::Desc)));
+
+        assert_eq!(search_params.page_number, list_options.clone().page);
+        assert_eq!(search_params.page_size, list_options.clone().limit);
     }
 }
