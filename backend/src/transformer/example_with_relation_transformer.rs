@@ -49,4 +49,124 @@ impl<'a> ExampleWithRelationTransformer {
         (example_with_relation_active_model, example_many_to_many_active_models)
 
     }
+  
+}
+
+#[cfg(test)]
+mod tests {
+
+    use example_many_to_many_dto::{ExampleManyToManyCreateDto, ExampleManyToManyUpdateDto};
+    use rocket::{form::validate::Len, serde::json::to_string};
+
+    use crate::{dto::list_options_dto::ListOptionsDto, model::example_many_to_many};
+
+    use super::*;
+
+    #[test]
+    fn test_entity_to_get_dto() {
+        let entity = ExampleSeaOrmWithRelationModel {
+            id: Uuid::new_v4(),
+            example_id: Uuid::new_v4(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc()
+        };
+
+        let example_many_to_manys = vec![
+            ExampleManyToManyModel {
+                id: Uuid::new_v4(),
+                name: String::from("Example 1"),
+                created_at: Utc::now().naive_utc(),
+                updated_at: Utc::now().naive_utc()
+            },
+            ExampleManyToManyModel {
+                id: Uuid::new_v4(),
+                name: String::from("Example 2"),
+                created_at: Utc::now().naive_utc(),
+                updated_at: Utc::now().naive_utc()
+            }
+        ];
+
+        let get_dto = ExampleWithRelationTransformer::entity_to_get_dto((entity.clone(), example_many_to_manys.clone()));
+        
+        assert_eq!(get_dto.id, entity.id.to_string());
+        assert_eq!(get_dto.example_id, entity.example_id.to_string());
+        assert_eq!(get_dto.example_many_to_manys.len(), 2);
+        assert_eq!(get_dto.created_at, entity.created_at.to_string());
+
+        assert_eq!(get_dto.example_many_to_manys[0].id, example_many_to_manys[0].id.to_string());
+        assert_eq!(get_dto.example_many_to_manys[0].name, example_many_to_manys[0].name);
+        assert_eq!(get_dto.example_many_to_manys[0].created_at, example_many_to_manys[0].created_at.to_string());
+        assert_eq!(get_dto.example_many_to_manys[1].id, example_many_to_manys[1].id.to_string());
+        assert_eq!(get_dto.example_many_to_manys[1].name, example_many_to_manys[1].name);
+        assert_eq!(get_dto.example_many_to_manys[1].created_at, example_many_to_manys[1].created_at.to_string());
+    }
+
+    #[test]
+    fn test_dto_to_create_active_model() {
+        let create_dto = ExampleWithRelationCreateDto {
+            example_id: Some(Uuid::new_v4().to_string()),
+            example_many_to_manys: Some(vec![
+                ExampleManyToManyCreateDto {
+                    name: Some(String::from("ExampleMTM 1"))
+                },
+                ExampleManyToManyCreateDto {
+                    name: Some(String::from("ExampleMTM 2"))
+                }
+            ])
+        };
+
+        let (create_active_model, example_many_to_many_create_active_models) = ExampleWithRelationTransformer::dto_to_create_active_model(create_dto.clone());
+        
+        let example_many_to_many_dtos = create_dto.example_many_to_manys.clone();
+
+        assert_eq!(create_active_model.id, NotSet);
+        assert_eq!(create_active_model.created_at, NotSet);
+        assert_eq!(create_active_model.updated_at, NotSet);
+
+        assert_eq!(example_many_to_many_create_active_models.len(), 2);
+        assert_eq!(example_many_to_many_create_active_models[0].id, NotSet);
+        assert_eq!(example_many_to_many_create_active_models[0].name, Set(example_many_to_many_dtos.clone().unwrap()[0].name.clone().unwrap()));
+        assert_eq!(example_many_to_many_create_active_models[0].created_at, NotSet);
+        assert_eq!(example_many_to_many_create_active_models[0].updated_at, NotSet);
+        assert_eq!(example_many_to_many_create_active_models[1].id, NotSet);
+        assert_eq!(example_many_to_many_create_active_models[1].name, Set(example_many_to_many_dtos.unwrap()[1].name.clone().unwrap()));
+        assert_eq!(example_many_to_many_create_active_models[1].created_at, NotSet);
+        assert_eq!(example_many_to_many_create_active_models[1].updated_at, NotSet);
+    }
+
+    #[test]
+    fn test_dto_to_update_active_model() {
+        let update_dto = ExampleWithRelationUpdateDto {
+            example_id: Some(Uuid::new_v4().to_string()),
+            example_many_to_manys: Some(vec![
+                ExampleManyToManyUpdateDto {
+                    id: Some(Uuid::new_v4().to_string()),
+                    name: Some(String::from("ExampleMTM 1"))
+                },
+                ExampleManyToManyUpdateDto {
+                    id: None,
+                    name: Some(String::from("ExampleMTM 2"))
+                }
+            ])
+        };
+
+        let binding = Uuid::new_v4().to_string();
+        let id = binding.as_str();
+
+        let (update_active_model, example_many_to_many_update_active_models) = ExampleWithRelationTransformer::dto_to_update_active_model(update_dto.clone(), id);
+        
+        assert_eq!(update_active_model.id, Set(Uuid::parse_str(id).unwrap()));
+        assert_eq!(update_active_model.created_at, NotSet);
+
+        assert_eq!(example_many_to_many_update_active_models.len(), 2);
+        assert_eq!(example_many_to_many_update_active_models[0].id, Set(Uuid::parse_str(&update_dto.clone().example_many_to_manys.unwrap()[0].id.clone().unwrap()).unwrap()));
+        assert_eq!(example_many_to_many_update_active_models[0].name, Set(update_dto.clone().example_many_to_manys.unwrap()[0].name.clone().unwrap()));
+        assert_eq!(example_many_to_many_update_active_models[0].created_at, NotSet);
+        assert_ne!(example_many_to_many_update_active_models[0].updated_at, NotSet);
+        assert_eq!(example_many_to_many_update_active_models[1].id, NotSet);
+        assert_eq!(example_many_to_many_update_active_models[1].name, Set(update_dto.clone().example_many_to_manys.unwrap()[1].name.clone().unwrap()));
+        assert_eq!(example_many_to_many_update_active_models[1].created_at, NotSet);
+        assert_ne!(example_many_to_many_update_active_models[1].updated_at, NotSet);
+    }
+
 }

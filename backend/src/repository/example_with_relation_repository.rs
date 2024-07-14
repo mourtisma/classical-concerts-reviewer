@@ -11,7 +11,7 @@ pub struct ExampleWithRelationRepository<'a> {
 
 impl<'a> ExampleWithRelationRepository<'a> {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto<ExampleOrderDto>) -> Result<Vec<ExampleWithRelationGetDto>, RepositoryError<'a>> {
+    pub async fn get_many(&mut self) -> Result<Vec<ExampleWithRelationGetDto>, RepositoryError<'a>> {
         
         let get_many_result = ExampleSeaOrmWithRelation::find().find_with_related(ExampleManyToMany).all(self.connection).await;
         

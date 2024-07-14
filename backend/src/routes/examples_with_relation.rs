@@ -33,7 +33,7 @@ async fn list<'a>(connection: &'a State<DatabaseConnection>) -> Result<Json<Succ
     let mut service = get_service(connection);
     
 
-    let examples_result = service.get_many(ListOptionsDto{order_by: None, page: None,limit: None}).await;
+    let examples_result = service.get_many().await;
     
     match examples_result {
         Ok(examples) => Ok(Json(examples)),

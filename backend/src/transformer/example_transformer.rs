@@ -122,7 +122,7 @@ mod tests {
             updated_at: Utc::now().naive_utc()
         };
 
-        let get_dto = ExampleTransformer::entity_to_get_dto(entity.clone());
+        let get_dto = ExampleTransformer::active_model_to_dto(entity.clone());
         
         assert_eq!(get_dto.id, entity.id.to_string());
         assert_eq!(get_dto.name, entity.name);

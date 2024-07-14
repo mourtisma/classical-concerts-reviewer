@@ -12,8 +12,8 @@ pub struct ExampleWithRelationService<'a> {
 
 impl<'a> ExampleWithRelationService<'a> {
 
-    pub async fn get_many(&mut self, options: ListOptionsDto<ExampleOrderDto>) -> Result<SuccessGetManyResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
-        let repository_result = self.repository.get_many(options).await;
+    pub async fn get_many(&mut self) -> Result<SuccessGetManyResult<ExampleWithRelationGetDto>, Box<dyn ApiError<'a> + 'a>> {
+        let repository_result = self.repository.get_many().await;
         
         match repository_result {
             Err(rep_error) => Err(to_api_error(rep_error)),
