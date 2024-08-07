@@ -46,7 +46,8 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
             num_pages = Some(num_items_and_pages.number_of_pages);
         } else {
             get_many_result = selector.clone().all(self.connection).await;
-            total_count = selector.count(self.connection).await.unwrap()
+            let total_count_result = selector.count(self.connection).await;
+            total_count = total_count_result.unwrap();
         }
         
         
@@ -194,8 +195,512 @@ impl<'a, SeaOrmModel, GetModelDto, CreateModelDto, UpdateModelDto, EntityOrderDt
             })
         }
         
+    }      
+
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::{btree_map, BTreeMap};
+
+    use crate::{dto::{example_dto::{ExampleCreateDto, ExampleGetDto, ExampleOrderDto, ExampleUpdateDto}, list_options_dto::OrderType}, transformer::example_transformer::ExampleTransformer};
+
+    use super::*;
+    use chrono::Utc;
+    use sea_orm::{
+        entity::prelude::*, DatabaseBackend, ItemsAndPagesNumber, MockDatabase, MockExecResult, MockRow, Transaction
+    };
+
+    #[async_std::test]
+    async fn test_get_many() -> Result<(), DbErr> {
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![BTreeMap::from([("num_items".to_string(), Value::BigInt(Some(1)))])]])
+            .append_query_results([
+                // First query result
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    },
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 2"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ]
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let examples_result = repository.get_many(ListOptionsDto::<ExampleOrderDto> {
+                order_by: Some(vec![ExampleOrderDto { field: String::from("name"), direction: OrderType::Asc }]),
+                page: Some(1),
+                limit: Some(1)
+            }).await;
+
+            let examples = examples_result.ok().unwrap();
+
+            assert_eq!(examples.total_count, 1);
+            assert_eq!(examples.num_pages, Some(1));
+
+        Ok(())
     }
 
-      
+    #[async_std::test]
+    async fn test_get_many_error() -> Result<(), DbErr> {
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![BTreeMap::from([("num_items".to_string(), Value::BigInt(Some(1)))])]])
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("error"))])
+            .into_connection();
 
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let examples_result = repository.get_many(ListOptionsDto::<ExampleOrderDto> {
+                order_by: Some(vec![ExampleOrderDto { field: String::from("name"), direction: OrderType::Asc }]),
+                page: Some(1),
+                limit: Some(1)
+            }).await;
+
+            assert!(examples_result.is_err());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([
+                // First query result
+                vec![
+                    ExampleSeaOrmModel {
+                        id,
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ]
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            let example = example_result.ok().unwrap();
+
+            assert_eq!(example.id, id.to_string());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("Not found"))])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            assert!(example_result.is_err());
+
+            assert_eq!(example_result.err().unwrap().message, Some("Record was not found"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotInserted])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            assert!(example_result.is_err());
+
+            assert_eq!(example_result.err().unwrap().message, Some("An unknow error occurred"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_create() -> Result<(), DbErr> {
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([
+                // First query result
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ]
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_create_dto = ExampleCreateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let example_create_result = repository.create(example_create_dto).await;
+
+            let example = example_create_result.ok().unwrap();
+
+            assert!(example.id.len() > 0);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_create_error() -> Result<(), DbErr> {
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_errors(vec![DbErr::RecordNotInserted])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_create_dto = ExampleCreateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let example_create_result = repository.create(example_create_dto).await;
+
+            assert!(example_create_result.is_err());
+
+            assert_eq!(example_create_result.err().unwrap().message, Some("An unknow error occurred"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([
+                // First query result
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ],
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ]
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            let example = example_update_result.ok().unwrap();
+
+            assert!(example.id.len() > 0);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("Not found"))])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().message, Some("Record was not found"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_get_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotUpdated])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().message, Some("An unknow error occurred"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+        .append_query_results([
+            // First query result
+            vec![
+                ExampleSeaOrmModel {
+                    id: Uuid::new_v4(),
+                    name: String::from("Example 1"),
+                    created_at: Utc::now().naive_utc(),
+                    updated_at: Utc::now().naive_utc()
+                }
+            ]
+        ])
+            .append_query_errors(vec![DbErr::RecordNotUpdated])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().message, Some("An unknow error occurred"));
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_delete() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_results([
+                MockExecResult {
+                    rows_affected: 1,
+                    last_insert_id: 0
+                }
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_delete_result = repository.delete(id_str).await;
+
+            assert!(example_delete_result.is_ok());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_delete_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        // Create MockDatabase with mock query results
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_results([
+                MockExecResult {
+                    rows_affected: 0,
+                    last_insert_id: 0
+                }
+            ])
+            .into_connection();
+
+            let mut repository = BaseSeaOrmRepository {
+                connection: &connection,
+                _phantom_sea_orm: PhantomData::<ExampleSeaOrm>,
+            _phantom_get: PhantomData::<ExampleGetDto>,
+            _phantom_create: PhantomData::<ExampleCreateDto>,
+            _phantom_update: PhantomData::<ExampleUpdateDto>,
+            _phantom_order: PhantomData::<ExampleOrderDto>,
+            _phantom_transformer: PhantomData::<ExampleTransformer>,
+            _phantom_active_model: PhantomData::<ExampleActiveModel>
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_delete_result = repository.delete(id_str).await;
+
+            assert!(example_delete_result.is_err());
+
+            assert_eq!(example_delete_result.err().unwrap().error_type, RepositoryErrorType::NotFound);
+
+        Ok(())
+    }
 }

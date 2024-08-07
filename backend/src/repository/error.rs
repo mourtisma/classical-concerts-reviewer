@@ -2,6 +2,7 @@ use std::error::Error;
 
 use sea_orm::{DbErr, TransactionError};
 
+#[derive(PartialEq, Debug)]
 pub enum RepositoryErrorType {
     NotFound,
     Unknown

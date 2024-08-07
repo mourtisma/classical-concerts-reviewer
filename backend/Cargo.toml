@@ -13,3 +13,5 @@ validator = { version = "0.15", features = ["derive"] }
 sea-orm = { version = "0.12", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros", "mock", "with-uuid" , "chrono"] }
 dotenvy = "0.15"
 chrono = "0.4.34"
+async-std = { version = "1", features = ["attributes", "tokio1"] }
+maplit = "1"
