@@ -238,3 +238,473 @@ impl<'a> ExampleWithRelationRepository<'a> {
       
 
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::{btree_map, BTreeMap};
+
+    use crate::{dto::{example_dto::{ExampleCreateDto, ExampleGetDto, ExampleOrderDto, ExampleUpdateDto}, example_many_to_many_dto::ExampleManyToManyCreateDto, list_options_dto::OrderType}, transformer::example_transformer::ExampleTransformer};
+
+    use super::*;
+    use chrono::Utc;
+    use sea_orm::{
+        entity::prelude::*, DatabaseBackend, ItemsAndPagesNumber, MockDatabase, MockExecResult, MockRow, Transaction
+    };
+
+    fn setup_repository<'a>(connection: &'a DatabaseConnection) -> 
+    ExampleWithRelationRepository<'a> {
+        ExampleWithRelationRepository {
+            connection,
+        }
+    }
+
+    #[async_std::test]
+    async fn test_get_many() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+        .append_query_results([
+            vec![
+                (
+                    ExampleSeaOrmWithRelationModel {
+                        id,
+                        example_id: Uuid::new_v4(),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc(),
+                    },
+                    Some(
+                        ExampleManyToManyModel {
+                            id: Uuid::new_v4(),
+                            name: String::from("Example 1"),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        }
+                    )
+                ),
+                (
+                    ExampleSeaOrmWithRelationModel {
+                        id,
+                        example_id: Uuid::new_v4(),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc(),
+                    },
+                    Some(
+                        ExampleManyToManyModel {
+                            id: Uuid::new_v4(),
+                            name: String::from("Example 2"),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        }
+                    )
+                ),
+            ]
+        ])
+        .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let result = repository.get_many().await;
+
+            let items = result.ok().unwrap();
+
+            assert_eq!(items.len(), 1);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_many_error() -> Result<(), DbErr> {
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([vec![BTreeMap::from([("num_items".to_string(), Value::BigInt(Some(1)))])]])
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("error"))])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let examples_result = repository.get_many().await;
+
+            assert!(examples_result.is_err());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+        .append_query_results([
+            vec![
+                (
+                    ExampleSeaOrmWithRelationModel {
+                        id,
+                        example_id: Uuid::new_v4(),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc(),
+                    },
+                    Some(
+                        ExampleManyToManyModel {
+                            id: Uuid::new_v4(),
+                            name: String::from("Example 1"),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        }
+                    )
+                ),
+                (
+                    ExampleSeaOrmWithRelationModel {
+                        id,
+                        example_id: Uuid::new_v4(),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc(),
+                    },
+                    Some(
+                        ExampleManyToManyModel {
+                            id: Uuid::new_v4(),
+                            name: String::from("Example 2"),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        }
+                    )
+                ),
+            ]
+        ])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            let example = example_result.ok().unwrap();
+
+            assert_eq!(example.id, id.to_string());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("Not found"))])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            assert!(example_result.is_err());
+            assert_eq!(example_result.err().unwrap().error_type, RepositoryErrorType::NotFound);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_get_one_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotInserted])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_result = repository.get_one(id_str).await;
+
+            assert!(example_result.is_err());
+            assert_eq!(example_result.err().unwrap().error_type, RepositoryErrorType::Unknown);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_create() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+        
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_results([
+                MockExecResult {
+                    last_insert_id: 1,
+                    rows_affected: 1,
+                },
+                MockExecResult {
+                    last_insert_id: 2,
+                    rows_affected: 1,
+                },
+                MockExecResult {
+                    last_insert_id: 3,
+                    rows_affected: 1,
+                },
+            ])
+            .append_query_results([
+                vec![
+                    (
+                        ExampleSeaOrmWithRelationModel {
+                            id,
+                            example_id: Uuid::new_v4(),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        },
+                        Some(
+                            ExampleManyToManyModel {
+                                id: Uuid::new_v4(),
+                                name: String::from("Example 1"),
+                                created_at: Utc::now().naive_utc(),
+                                updated_at: Utc::now().naive_utc(),
+                            }
+                        )
+                    ),
+                    (
+                        ExampleSeaOrmWithRelationModel {
+                            id,
+                            example_id: Uuid::new_v4(),
+                            created_at: Utc::now().naive_utc(),
+                            updated_at: Utc::now().naive_utc(),
+                        },
+                        Some(
+                            ExampleManyToManyModel {
+                                id: Uuid::new_v4(),
+                                name: String::from("Example 2"),
+                                created_at: Utc::now().naive_utc(),
+                                updated_at: Utc::now().naive_utc(),
+                            }
+                        )
+                    ),
+                ]
+            ])
+            .into_connection();
+    
+        let mut repository = setup_repository(&connection);
+    
+        let example_create_dto = ExampleWithRelationCreateDto {
+            example_id: Some(Uuid::new_v4().to_string()),
+            example_many_to_manys: Some(vec![
+                ExampleManyToManyCreateDto {
+                    name: Some(String::from("Example 1")),
+                },
+                ExampleManyToManyCreateDto {
+                    name: Some(String::from("Example 2")),
+                },
+            ]),
+        };
+    
+        let example_create_result = repository.create(example_create_dto).await;
+    
+        let example = example_create_result.ok().unwrap();
+    
+        assert!(example.id.len() > 0);
+    
+        Ok(())
+    }
+
+    /* #[async_std::test]
+    async fn test_create_error() -> Result<(), DbErr> {
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_errors(vec![DbErr::RecordNotInserted])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let example_create_dto = ExampleCreateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let example_create_result = repository.create(example_create_dto).await;
+
+            assert!(example_create_result.is_err());
+            assert_eq!(example_create_result.err().unwrap().error_type, RepositoryErrorType::Unknown);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results([
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ],
+                vec![
+                    ExampleSeaOrmModel {
+                        id: Uuid::new_v4(),
+                        name: String::from("Example 1"),
+                        created_at: Utc::now().naive_utc(),
+                        updated_at: Utc::now().naive_utc()
+                    }
+                ]
+            ])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            let example = example_update_result.ok().unwrap();
+
+            assert!(example.id.len() > 0);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotFound(String::from("Not found"))])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().error_type, RepositoryErrorType::NotFound);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_get_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_errors(vec![DbErr::RecordNotUpdated])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().error_type, RepositoryErrorType::Unknown);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_update_error() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+        .append_query_results([
+            // First query result
+            vec![
+                ExampleSeaOrmModel {
+                    id: Uuid::new_v4(),
+                    name: String::from("Example 1"),
+                    created_at: Utc::now().naive_utc(),
+                    updated_at: Utc::now().naive_utc()
+                }
+            ]
+        ])
+            .append_query_errors(vec![DbErr::RecordNotUpdated])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let example_update_dto = ExampleUpdateDto {
+                name: Some(String::from("Example 1"))
+            };
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_update_result = repository.update(id_str, example_update_dto).await;
+
+            assert!(example_update_result.is_err());
+
+            assert_eq!(example_update_result.err().unwrap().error_type, RepositoryErrorType::Unknown);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_delete() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_results([
+                MockExecResult {
+                    rows_affected: 1,
+                    last_insert_id: 0
+                }
+            ])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_delete_result = repository.delete(id_str).await;
+
+            assert!(example_delete_result.is_ok());
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_delete_not_found() -> Result<(), DbErr> {
+        let id = Uuid::new_v4();
+
+        let connection = MockDatabase::new(DatabaseBackend::Postgres)
+            .append_exec_results([
+                MockExecResult {
+                    rows_affected: 0,
+                    last_insert_id: 0
+                }
+            ])
+            .into_connection();
+
+            let mut repository = setup_repository(&connection);
+
+            let binding = id.to_string();
+            let id_str = binding.as_str();
+
+            let example_delete_result = repository.delete(id_str).await;
+
+            assert!(example_delete_result.is_err());
+
+            assert_eq!(example_delete_result.err().unwrap().error_type, RepositoryErrorType::NotFound);
+
+        Ok(())
+    } */
+}
